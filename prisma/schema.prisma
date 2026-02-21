@@ -1,0 +1,77 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  role          String    @default("USER")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Anuncio {
+  id              String   @id @default(cuid())
+  titulo          String
+  subtitulo       String?
+  slug            String   @unique
+  descripcion     String?
+  colonia         String
+  ciudad          String
+  estado          String   @default("BORRADOR")
+  precio          Float
+  moneda          String   @default("MXN")
+  periodo         String   @default("/mes")
+  tipoPropiedad   String
+  modalidadRenta  String
+  recamaras       Int      @default(0)
+  banos           Int      @default(0)
+  destacado       Boolean  @default(false)
+  fechaPublicacion DateTime?
+  fechaExpiracion  DateTime?
+  metaTitle       String?
+  metaDescription String?
+  vistas          Int      @default(0)
+  contactos       Int      @default(0)
+  imagenes        ImagenAnuncio[]
+  publicaciones   PublicacionCanal[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([estado])
+  @@index([tipoPropiedad])
+  @@index([modalidadRenta])
+  @@index([createdAt])
+}
+
+model ImagenAnuncio {
+  id          String   @id @default(cuid())
+  url         String
+  esPrincipal Boolean  @default(false)
+  orden       Int      @default(0)
+  anuncioId   String
+  anuncio     Anuncio  @relation(fields: [anuncioId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+}
+
+model PublicacionCanal {
+  id          String   @id @default(cuid())
+  anuncioId   String
+  anuncio     Anuncio  @relation(fields: [anuncioId], references: [id], onDelete: Cascade)
+  canal       String
+  estado      String   @default("PENDIENTE")
+  externalId  String?
+  externalUrl String?
+  errorMsg    String?
+  publicadoAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@unique([anuncioId, canal])
+}
