@@ -3,7 +3,7 @@
 // ============================================
 
 // Tipos de usuario y roles
-export type UserRole = 'admin' | 'agent' | 'assistant';
+export type UserRole = 'super_admin' | 'admin' | 'agent' | 'assistant';
 
 export interface User {
   id: string;

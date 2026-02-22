@@ -3,7 +3,8 @@
 // ============================================
 
 import { useState } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -154,8 +155,8 @@ function NavGroupComponent({
   if (isCollapsed) {
     return (
       <nav className="px-3 space-y-1 mb-2">
-        <NavLink
-          to={group.items[0]?.href || '#'}
+        <Link
+          href={group.items[0]?.href || '#'}
           className={() => cn(
             "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
             "hover:bg-accent hover:text-accent-foreground",
@@ -166,7 +167,7 @@ function NavGroupComponent({
           )}
         >
           <group.icon className="w-5 h-5 flex-shrink-0" />
-        </NavLink>
+        </Link>
       </nav>
     );
   }
@@ -191,9 +192,9 @@ function NavGroupComponent({
       <CollapsibleContent>
         <nav className="px-3 space-y-1 mt-1 ml-4 border-l-2 border-border/50">
           {group.items.map((item) => (
-            <NavLink
+            <Link
               key={item.href}
-              to={item.href}
+              href={item.href}
               className={({ isActive }: { isActive: boolean }) => cn(
                 "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200",
                 "hover:bg-accent hover:text-accent-foreground",
@@ -204,7 +205,7 @@ function NavGroupComponent({
             >
               <item.icon className="w-4 h-4 flex-shrink-0" />
               <span>{item.label}</span>
-            </NavLink>
+            </Link>
           ))}
         </nav>
       </CollapsibleContent>
@@ -216,25 +217,25 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
   const { user, logout, isAdmin } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [propertiesOpen, setPropertiesOpen] = useState(true);
-  const location = useLocation();
+  const pathname = usePathname();
 
   const userInitials = user 
     ? `${user.name.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase()
     : '?';
 
-  const isPropertiesActive = location.pathname.startsWith('/properties') ||
-    location.pathname.startsWith('/estimations') ||
-    location.pathname.startsWith('/links') ||
-    location.pathname.startsWith('/shared-lists') ||
-    location.pathname.startsWith('/performance');
+  const isPropertiesActive = pathname.pathname.startsWith('/properties') ||
+    pathname.pathname.startsWith('/estimations') ||
+    pathname.pathname.startsWith('/links') ||
+    pathname.pathname.startsWith('/shared-lists') ||
+    pathname.pathname.startsWith('/performance');
 
-  const isAdminCondominiosActive = location.pathname.startsWith('/carta-presentacion') ||
-    location.pathname.startsWith('/cotizaciones') ||
-    location.pathname.startsWith('/anuncios') ||
-    location.pathname.startsWith('/legal');
+  const isAdminCondominiosActive = pathname.pathname.startsWith('/carta-presentacion') ||
+    pathname.pathname.startsWith('/cotizaciones') ||
+    pathname.pathname.startsWith('/anuncios') ||
+    pathname.pathname.startsWith('/legal');
 
-  const isAirbnbActive = location.pathname.startsWith('/airbnb');
-  const isReportesActive = location.pathname.startsWith('/reportes');
+  const isAirbnbActive = pathname.pathname.startsWith('/airbnb');
+  const isReportesActive = pathname.pathname.startsWith('/reportes');
 
   const NavContent = ({ onItemClick }: { onItemClick?: () => void }) => (
     <>
@@ -259,8 +260,8 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
       <ScrollArea className="flex-1 py-4">
         {/* Dashboard */}
         <nav className="px-3 space-y-1 mb-2">
-          <NavLink
-            to={dashboardItem.href}
+          <Link
+            href={dashboardItem.href}
             onClick={onItemClick}
             className={({ isActive }: { isActive: boolean }) => cn(
               "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
@@ -273,7 +274,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
           >
             <dashboardItem.icon className="w-5 h-5 flex-shrink-0" />
             {!isCollapsed && <span>{dashboardItem.label}</span>}
-          </NavLink>
+          </Link>
         </nav>
 
         {/* Propiedades Group */}
@@ -297,9 +298,9 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
             <CollapsibleContent>
               <nav className="px-3 space-y-1 mt-1 ml-4 border-l-2 border-border/50">
                 {propertiesGroup.items.map((item) => (
-                  <NavLink
+                  <Link
                     key={item.href}
-                    to={item.href}
+                    href={item.href}
                     onClick={onItemClick}
                     className={({ isActive }: { isActive: boolean }) => cn(
                       "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200",
@@ -311,14 +312,14 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                   >
                     <item.icon className="w-4 h-4 flex-shrink-0" />
                     <span>{item.label}</span>
-                  </NavLink>
+                  </Link>
                 ))}
               </nav>
             </CollapsibleContent>
           </Collapsible>
         ) : (
           <nav className="px-3 space-y-1 mb-2">
-            <NavLink
+            <Link
               to="/properties"
               onClick={onItemClick}
               className={() => cn(
@@ -331,16 +332,16 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
               )}
             >
               <propertiesGroup.icon className="w-5 h-5 flex-shrink-0" />
-            </NavLink>
+            </Link>
           </nav>
         )}
 
         {/* Main Nav Items */}
         <nav className="px-3 space-y-1 mt-2">
           {mainNavItems.map((item) => (
-            <NavLink
+            <Link
               key={item.href}
-              to={item.href}
+              href={item.href}
               onClick={onItemClick}
               className={({ isActive }: { isActive: boolean }) => cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
@@ -353,7 +354,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
             >
               <item.icon className="w-5 h-5 flex-shrink-0" />
               {!isCollapsed && <span>{item.label}</span>}
-            </NavLink>
+            </Link>
           ))}
         </nav>
 
@@ -394,9 +395,9 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
             )}
             <nav className="px-3 space-y-1">
               {adminNavItems.map((item) => (
-                <NavLink
+                <Link
                   key={item.href}
-                  to={item.href}
+                  href={item.href}
                   onClick={onItemClick}
                   className={({ isActive }: { isActive: boolean }) => cn(
                     "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
@@ -409,7 +410,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                 >
                   <item.icon className="w-5 h-5 flex-shrink-0" />
                   {!isCollapsed && <span>{item.label}</span>}
-                </NavLink>
+                </Link>
               ))}
             </nav>
           </div>
@@ -424,9 +425,9 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
           )}
           <nav className="px-3 space-y-1">
             {secondaryNavItems.map((item) => (
-              <NavLink
+              <Link
                 key={item.href}
-                to={item.href}
+                href={item.href}
                 onClick={onItemClick}
                 className={({ isActive }: { isActive: boolean }) => cn(
                   "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
@@ -443,7 +444,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                     <span className="flex-1">{item.label}</span>
                   </>
                 )}
-              </NavLink>
+              </Link>
             ))}
           </nav>
         </div>
