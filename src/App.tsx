@@ -19,6 +19,8 @@ import { UserManagement } from '@/components/users/UserManagement';
 import { VisitCalendar } from '@/components/calendar/VisitCalendar';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 import { CartaPresentacion } from '@/components/carta/CartaPresentacion';
+import { AnunciosAdminPage } from '@/pages/admin/condominios/anuncios';
+import { AnunciosAirbnbPage } from '@/pages/airbnb/anuncios';
 import { Cotizaciones } from '@/components/cotizaciones/Cotizaciones';
 import { useDatabaseInit } from '@/hooks/useDatabase';
 import { Toaster } from '@/components/ui/sonner';
@@ -139,7 +141,7 @@ function AppRoutes() {
         {/* Properties - Submenús (placeholders por ahora) */}
         <Route 
           path="estimations" 
-          element={<ModulePlaceholder title="Estimaciones" description="Avalúos automáticos de propiedades" />} 
+          element={<EstimacionForm />} 
         />
         <Route 
           path="links" 
@@ -207,7 +209,7 @@ function AppRoutes() {
         {/* Administración de Condominios */}
         <Route 
           path="condominios" 
-          element={<ModulePlaceholder title="Administración de Condominios" description="Gestión de condominios y propiedades horizontales" />} 
+          element={<AnunciosAdminPage />} 
         />
         
         {/* Carta Presentación */}
@@ -219,7 +221,7 @@ function AppRoutes() {
         {/* Anuncios */}
         <Route 
           path="anuncios" 
-          element={<ModulePlaceholder title="Anuncios" description="Gestión de anuncios publicitarios" />} 
+          element={<AnunciosAirbnbPage />} 
         />
         
         {/* Legal */}
