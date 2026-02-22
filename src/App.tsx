@@ -213,9 +213,9 @@ function AppRoutes() {
           element={<AnunciosAdminPage />}> 
 
         {/* Rutas hijas de anuncios */}
-        <Route path="admin/condominios/anuncios/nuevo" element={<NuevoAnuncio />} />
-        <Route path="admin/condominios/anuncios/:id" element={<AnunciosAdminPage />} />
-        <Route path="admin/condominios/anuncios/:id/editar" element={<EditarAnuncio />} />
+        <Route path="nuevo" element={<NuevoAnuncio />} />
+        <Route path=":id" element={<AnunciosAdminPage />} />
+        <Route path=":id/editar" element={<EditarAnuncio />} />
         </Route>
         
         {/* Carta Presentación */}
