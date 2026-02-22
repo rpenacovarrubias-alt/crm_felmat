@@ -94,7 +94,7 @@ const adminCondominiosGroup: NavGroup = {
   items: [
     { label: 'Carta Presentación', href: '/carta-presentacion', icon: FileText },
     { label: 'Cotizaciones', href: '/cotizaciones', icon: Receipt },
-    { label: 'Anuncios', href: '/anuncios', icon: Megaphone },
+    { label: 'Anuncios', href: '/admin/condominios/anuncios', icon: Megaphone },
     { label: 'Legal', href: '/legal/compra-venta', icon: Scale },
   ],
 };
@@ -104,7 +104,7 @@ const airbnbGroup: NavGroup = {
   label: 'AIRBNB',
   icon: Hotel,
   items: [
-    { label: 'Anuncio', href: '/airbnb/anuncio', icon: Megaphone },
+    { label: 'Anuncio', href: '/airbnb/anuncios', icon: Megaphone },
     { label: 'Propiedades', href: '/airbnb/propiedades', icon: Building },
     { label: 'Fichas Técnicas', href: '/airbnb/fichas', icon: ClipboardList },
     { label: 'Administración', href: '/airbnb/administracion', icon: Briefcase },
