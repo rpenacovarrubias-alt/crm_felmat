@@ -216,7 +216,7 @@ function AppRoutes() {
         <Route path="admin/condominios/anuncios/nuevo" element={<NuevoAnuncio />} />
         <Route path="admin/condominios/anuncios/:id" element={<AnunciosAdminPage />} />
         <Route path="admin/condominios/anuncios/:id/editar" element={<EditarAnuncio />} />
-        />
+        >
         
         {/* Carta Presentación */}
         <Route path="carta-presentacion" element={<CartaPresentacion />} />
