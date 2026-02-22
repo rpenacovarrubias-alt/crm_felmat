@@ -208,15 +208,10 @@ function AppRoutes() {
         {/* NUEVOS MENÚS */}
         
         {/* Administración de Condominios */}
-        <Route 
-          path="admin/condominios/anuncios" 
-          element={<AnunciosAdminPage />}> 
-
-        {/* Rutas hijas de anuncios */}
-        <Route path="nuevo" element={<NuevoAnuncio />} />
-        <Route path=":id" element={<AnunciosAdminPage />} />
-        <Route path=":id/editar" element={<EditarAnuncio />} />
-        </Route>
+        <Route path="admin/condominios/anuncios" element={<AnunciosAdminPage />} />
+        <Route path="admin/condominios/anuncios/nuevo" element={<NuevoAnuncio />} />
+        <Route path="admin/condominios/anuncios/:id" element={<AnunciosAdminPage />} />
+        <Route path="admin/condominios/anuncios/:id/editar" element={<EditarAnuncio />} />
         
         {/* Carta Presentación */}
         <Route path="carta-presentacion" element={<CartaPresentacion />} />
