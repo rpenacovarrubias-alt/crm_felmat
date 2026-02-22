@@ -257,7 +257,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
         </div>
       </div>
 
-      <ScrollArea className="flex-1 py-4">
+      <ScrollArea className="flex-1 py-4 h-[calc(100vh-8rem)] overflow-y-auto">
         {/* Dashboard */}
         <nav className="px-3 space-y-1 mb-2">
           <Link
