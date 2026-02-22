@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -12,7 +12,7 @@ import { toast } from 'sonner';
 import { ArrowLeft, Save, Loader2 } from 'lucide-react';
 
 export default function NuevoAnuncioPage() {
-  const router = useRouter();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     titulo: '',
@@ -43,7 +43,7 @@ export default function NuevoAnuncioPage() {
 
       const data = await response.json();
       toast.success('Anuncio creado exitosamente');
-      router.push('/admin/condominios/anuncios');
+      navigate('/admin/condominios/anuncios');
     } catch (error) {
       toast.error('Error al crear el anuncio');
       console.error(error);
@@ -57,7 +57,7 @@ export default function NuevoAnuncioPage() {
       <div className="flex items-center gap-4 mb-6">
         <Button
           variant="outline"
-          onClick={() => router.push('/admin/condominios/anuncios')}
+          onClick={() => navigate('/admin/condominios/anuncios')}
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
           Volver
@@ -160,7 +160,7 @@ export default function NuevoAnuncioPage() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => router.push('/admin/condominios/anuncios')}
+                onClick={() => navigate('/admin/condominios/anuncios')}
               >
                 Cancelar
               </Button>
