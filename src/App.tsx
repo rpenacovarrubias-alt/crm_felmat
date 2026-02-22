@@ -21,7 +21,6 @@ import { NotificationCenter } from '@/components/notifications/NotificationCente
 import { CartaPresentacion } from '@/components/carta/CartaPresentacion';
 import AnunciosAdminPage from '@/pages/admin/condominios/anuncios';
 import AnunciosAirbnbPage from '@/pages/airbnb/anuncios';
-import { EstimacionForm } from "@/components/estimaciones/EstimacionForm";
 import { Cotizaciones } from '@/components/cotizaciones/Cotizaciones';
 import { useDatabaseInit } from '@/hooks/useDatabase';
 import { Toaster } from '@/components/ui/sonner';
@@ -209,9 +208,9 @@ function AppRoutes() {
         
         {/* Administración de Condominios */}
         <Route 
-          path="admin/condominios/anuncios" element={<AnunciosAdminPage />} 
-        <Route path="admin/condominios/anuncios" element={<AnunciosAdminPage />} element={<AnunciosAdminPage />} />
+          path="admin/condominios/anuncios" 
           element={<AnunciosAdminPage />} 
+        />
         
         {/* Carta Presentación */}
         <Route path="carta-presentacion" element={<CartaPresentacion />} />
