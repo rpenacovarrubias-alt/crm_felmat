@@ -210,7 +210,7 @@ function AppRoutes() {
         {/* Administración de Condominios */}
         <Route 
           path="admin/condominios/anuncios" 
-          element={<AnunciosAdminPage />} 
+          element={<AnunciosAdminPage />}> 
 
         {/* Rutas hijas de anuncios */}
         <Route path="admin/condominios/anuncios/nuevo" element={<NuevoAnuncio />} />
