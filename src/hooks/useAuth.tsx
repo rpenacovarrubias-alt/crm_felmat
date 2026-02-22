@@ -322,3 +322,4 @@ export function useRequireAuth(roles?: UserRole[]) {
 
   return { user, isLoading };
 }
+// Force update - Sun Feb 22 04:26:23 UTC 2026
