@@ -78,7 +78,7 @@ const CANALES: Record<string, { label: string; icon: React.ElementType; color: s
 };
 
 export default function ListaAnuncios({ modo = 'admin' }: { modo?: 'admin' | 'airbnb' }) {
-  const router = useNavigate();
+  const navigate = useNavigate();
   const [anuncios, setAnuncios] = useState<Anuncio[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
