@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useNavigate } from 'react-router-dom';
 import {
   Plus, Search, MoreHorizontal, Eye, Edit, Trash2, Share2,
   MapPin, BedDouble, Bath, CheckCircle2, XCircle, Clock,
@@ -78,7 +78,7 @@ const CANALES: Record<string, { label: string; icon: React.ElementType; color: s
 };
 
 export default function ListaAnuncios({ modo = 'admin' }: { modo?: 'admin' | 'airbnb' }) {
-  const router = useRouter();
+  const router = useNavigate();
   const [anuncios, setAnuncios] = useState<Anuncio[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
