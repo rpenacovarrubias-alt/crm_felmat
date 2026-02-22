@@ -19,7 +19,7 @@ import { UserManagement } from '@/components/users/UserManagement';
 import { VisitCalendar } from '@/components/calendar/VisitCalendar';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 import { CartaPresentacion } from '@/components/carta/CartaPresentacion';
-import AnunciosAdminPage from '@/pages/admin/condominios/anuncios';
+import AnunciosAdminPage, { NuevoAnuncio, EditarAnuncio } from '@/pages/admin/condominios/anuncios';
 import AnunciosAirbnbPage from '@/pages/airbnb/anuncios';
 import { EstimacionForm } from "@/components/estimaciones/EstimacionForm";
 import { Cotizaciones } from '@/components/cotizaciones/Cotizaciones';
@@ -211,6 +211,12 @@ function AppRoutes() {
         <Route 
           path="admin/condominios/anuncios" 
           element={<AnunciosAdminPage />} 
+cat > /tmp/rutas_anuncios.txt << 'EOF'
+
+        {/* Rutas hijas de anuncios */}
+        <Route path="admin/condominios/anuncios/nuevo" element={<NuevoAnuncio />} />
+        <Route path="admin/condominios/anuncios/:id" element={<AnunciosAdminPage />} />
+        <Route path="admin/condominios/anuncios/:id/editar" element={<EditarAnuncio />} />
         />
         
         {/* Carta Presentación */}
