@@ -146,7 +146,7 @@ export default function ListaAnuncios({ modo = 'admin' }: { modo?: 'admin' | 'ai
       if (response.ok) {
         const nuevo = await response.json();
         toast.success('Anuncio duplicado');
-        router.push(`${basePath}/anuncios/${nuevo.id}/editar`);
+        navigate(`${basePath}/anuncios/${nuevo.id}/editar`);
       } else { toast.error('Error al duplicar'); }
     } catch (error) { toast.error('Error al duplicar'); }
   };
@@ -219,8 +219,8 @@ export default function ListaAnuncios({ modo = 'admin' }: { modo?: 'admin' | 'ai
                     <Button variant="secondary" size="icon" className="h-8 w-8 bg-white/95 hover:bg-white shadow-md"><MoreHorizontal className="h-4 w-4" /></Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuItem onClick={() => router.push(`${basePath}/anuncios/${anuncio.id}`)}><Eye className="mr-2 h-4 w-4" />Ver detalle</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => router.push(`${basePath}/anuncios/${anuncio.id}/editar`)}><Edit className="mr-2 h-4 w-4" />Editar</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate(`${basePath}/anuncios/${anuncio.id}`)}><Eye className="mr-2 h-4 w-4" />Ver detalle</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate(`${basePath}/anuncios/${anuncio.id}/editar`)}><Edit className="mr-2 h-4 w-4" />Editar</DropdownMenuItem>
                     <DropdownMenuItem onClick={() => handleDuplicar(anuncio)}><Copy className="mr-2 h-4 w-4" />Duplicar</DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => setAnuncioPublicar(anuncio)}><Share2 className="mr-2 h-4 w-4" />Publicar en...</DropdownMenuItem>
@@ -323,8 +323,8 @@ export default function ListaAnuncios({ modo = 'admin' }: { modo?: 'admin' | 'ai
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-600 hover:text-gray-900" onClick={() => router.push(`${basePath}/anuncios/${anuncio.id}`)} title="Ver detalle"><Eye className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-600 hover:text-blue-600" onClick={() => router.push(`${basePath}/anuncios/${anuncio.id}/editar`)} title="Editar"><Edit className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-600 hover:text-gray-900" onClick={() => navigate(`${basePath}/anuncios/${anuncio.id}`)} title="Ver detalle"><Eye className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-600 hover:text-blue-600" onClick={() => navigate(`${basePath}/anuncios/${anuncio.id}/editar`)} title="Editar"><Edit className="h-4 w-4" /></Button>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
@@ -353,7 +353,7 @@ export default function ListaAnuncios({ modo = 'admin' }: { modo?: 'admin' | 'ai
           <h1 className="text-2xl font-bold text-gray-900">Anuncios de Propiedades</h1>
           <p className="text-gray-500 mt-1">Gestiona y publica tus anuncios en múltiples canales</p>
         </div>
-        <Button onClick={() => router.push(`${basePath}/anuncios/nuevo`)} className="bg-[#B8922A] hover:bg-[#8B6E1F] text-white shadow-md hover:shadow-lg transition-all"><Plus className="mr-2 h-4 w-4" />Crear Anuncio</Button>
+        <Button onClick={() => navigate(`${basePath}/anuncios/nuevo`)} className="bg-[#B8922A] hover:bg-[#8B6E1F] text-white shadow-md hover:shadow-lg transition-all"><Plus className="mr-2 h-4 w-4" />Crear Anuncio</Button>
       </div>
 
       <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm space-y-4">
@@ -390,7 +390,7 @@ export default function ListaAnuncios({ modo = 'admin' }: { modo?: 'admin' | 'ai
           <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4"><ImageIcon className="h-10 w-10 text-gray-400" /></div>
           <h3 className="text-lg font-semibold text-gray-900 mb-2">No hay anuncios</h3>
           <p className="text-gray-500 mb-6 max-w-sm mx-auto">{filters.busqueda || filters.estado || filters.tipo || filters.modalidad ? 'No se encontraron anuncios con los filtros seleccionados. Intenta con otros criterios.' : 'Comienza creando tu primer anuncio para publicar en múltiples canales.'}</p>
-          <Button onClick={() => router.push(`${basePath}/anuncios/nuevo`)} className="bg-[#B8922A] hover:bg-[#8B6E1F] text-white"><Plus className="mr-2 h-4 w-4" />Crear Anuncio</Button>
+          <Button onClick={() => navigate(`${basePath}/anuncios/nuevo`)} className="bg-[#B8922A] hover:bg-[#8B6E1F] text-white"><Plus className="mr-2 h-4 w-4" />Crear Anuncio</Button>
         </div>
       ) : (
         <><div className="flex items-center justify-between text-sm text-gray-500"><p>Mostrando {anuncios.length} anuncio{anuncios.length !== 1 ? 's' : ''}</p></div>{viewMode === 'grid' ? <GridView /> : <ListView />}</>
