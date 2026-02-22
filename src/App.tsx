@@ -211,7 +211,6 @@ function AppRoutes() {
         <Route 
           path="admin/condominios/anuncios" 
           element={<AnunciosAdminPage />} 
-cat > /tmp/rutas_anuncios.txt << 'EOF'
 
         {/* Rutas hijas de anuncios */}
         <Route path="admin/condominios/anuncios/nuevo" element={<NuevoAnuncio />} />
