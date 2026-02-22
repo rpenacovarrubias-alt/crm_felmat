@@ -194,3 +194,6 @@ export interface EstimacionFormData {
   valorCatastral?: Partial<ValorCatastral>;
   observaciones?: string;
 }
+
+// Re-exportar tipos para compatibilidad
+export type { TipoPropiedad, EstadoConservacion, TipoAcabados, EstimacionFormData };
