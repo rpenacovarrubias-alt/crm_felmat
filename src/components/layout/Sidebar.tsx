@@ -1,9 +1,13 @@
-// ============================================
+// ==========================================
 // SIDEBAR DE NAVEGACIÓN - MENÚS COMPLETOS
-// ============================================
+// Compatible con Next.js App Router
+// ==========================================
+
+'use client';
 
 import { useState } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -72,7 +76,7 @@ interface NavGroup {
 }
 
 // Menús principales
-const dashboardItem: NavItem = { label: 'Dashboard', href: '/', icon: LayoutDashboard };
+const dashboardItem: NavItem = { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard };
 
 // Grupo de Propiedades con submenús
 const propertiesGroup: NavGroup = {
@@ -80,7 +84,7 @@ const propertiesGroup: NavGroup = {
   icon: Building2,
   items: [
     { label: 'Inventario', href: '/properties', icon: Package },
-    { label: 'Estimaciones', href: '/estimations', icon: Calculator },
+    { label: 'Estimaciones', href: '/estimaciones', icon: Calculator },
     { label: 'Vinculaciones', href: '/links', icon: Link2 },
     { label: 'Listas compartidas', href: '/shared-lists', icon: Share2 },
     { label: 'Desempeño', href: '/performance', icon: TrendingUp },
@@ -140,13 +144,13 @@ const secondaryNavItems: NavItem[] = [
 ];
 
 // Componente para renderizar un grupo colapsable
-function NavGroupComponent({ 
-  group, 
-  isCollapsed, 
-  isActive 
-}: { 
-  group: NavGroup; 
-  isCollapsed: boolean; 
+function NavGroupComponent({
+  group,
+  isCollapsed,
+  isActive,
+}: {
+  group: NavGroup;
+  isCollapsed: boolean;
   isActive: boolean;
 }) {
   const [isOpen, setIsOpen] = useState(isActive);
@@ -154,19 +158,19 @@ function NavGroupComponent({
   if (isCollapsed) {
     return (
       <nav className="px-3 space-y-1 mb-2">
-        <NavLink
-          to={group.items[0]?.href || '#'}
-          className={() => cn(
+        <Link
+          href={group.items[0]?.href || '#'}
+          className={cn(
             "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
             "hover:bg-accent hover:text-accent-foreground",
-            isActive 
-              ? "bg-primary text-primary-foreground shadow-sm" 
+            isActive
+              ? "bg-primary text-primary-foreground shadow-sm"
               : "text-muted-foreground",
             "justify-center px-2"
           )}
         >
           <group.icon className="w-5 h-5 flex-shrink-0" />
-        </NavLink>
+        </Link>
       </nav>
     );
   }
@@ -178,8 +182,8 @@ function NavGroupComponent({
           className={cn(
             "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 mx-3",
             "hover:bg-accent hover:text-accent-foreground",
-            isActive 
-              ? "bg-primary/10 text-primary" 
+            isActive
+              ? "bg-primary/10 text-primary"
               : "text-muted-foreground"
           )}
         >
@@ -191,20 +195,18 @@ function NavGroupComponent({
       <CollapsibleContent>
         <nav className="px-3 space-y-1 mt-1 ml-4 border-l-2 border-border/50">
           {group.items.map((item) => (
-            <NavLink
+            <Link
               key={item.href}
-              to={item.href}
-              className={({ isActive }: { isActive: boolean }) => cn(
+              href={item.href}
+              className={cn(
                 "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200",
                 "hover:bg-accent hover:text-accent-foreground",
-                isActive 
-                  ? "text-primary font-medium" 
-                  : "text-muted-foreground"
+                "text-muted-foreground"
               )}
             >
               <item.icon className="w-4 h-4 flex-shrink-0" />
               <span>{item.label}</span>
-            </NavLink>
+            </Link>
           ))}
         </nav>
       </CollapsibleContent>
@@ -213,28 +215,26 @@ function NavGroupComponent({
 }
 
 export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
-  const { user, logout, isAdmin } = useAuth();
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [propertiesOpen, setPropertiesOpen] = useState(true);
-  const pathname = useLocation();
+  const pathname = usePathname();
+  const { user, logout } = useAuth();
 
-  const userInitials = user 
-    ? `${user.name.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase()
+  const userInitials = user
+    ? `${user.name?.charAt(0) || ''}${user.lastName?.charAt(0) || ''}`.toUpperCase()
     : '?';
 
-  const isPropertiesActive = pathname.pathname.startsWith('/properties') ||
-    pathname.pathname.startsWith('/estimations') ||
-    pathname.pathname.startsWith('/links') ||
-    pathname.pathname.startsWith('/shared-lists') ||
-    pathname.pathname.startsWith('/performance');
+  const isPropertiesActive = pathname?.startsWith('/properties') ||
+    pathname?.startsWith('/estimaciones') ||
+    pathname?.startsWith('/links') ||
+    pathname?.startsWith('/shared-lists') ||
+    pathname?.startsWith('/performance');
 
-  const isAdminCondominiosActive = pathname.pathname.startsWith('/carta-presentacion') ||
-    pathname.pathname.startsWith('/cotizaciones') ||
-    pathname.pathname.startsWith('/anuncios') ||
-    pathname.pathname.startsWith('/legal');
+  const isAdminCondominiosActive = pathname?.startsWith('/carta-presentacion') ||
+    pathname?.startsWith('/cotizaciones') ||
+    pathname?.startsWith('/admin/condominios') ||
+    pathname?.startsWith('/legal');
 
-  const isAirbnbActive = pathname.pathname.startsWith('/airbnb');
-  const isReportesActive = pathname.pathname.startsWith('/reportes');
+  const isAirbnbActive = pathname?.startsWith('/airbnb');
+  const isReportesActive = pathname?.startsWith('/reportes');
 
   const NavContent = ({ onItemClick }: { onItemClick?: () => void }) => (
     <>
@@ -259,276 +259,248 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
       <ScrollArea className="flex-1 py-4 h-[calc(100vh-8rem)] overflow-y-auto">
         {/* Dashboard */}
         <nav className="px-3 space-y-1 mb-2">
-          <NavLink
-            to={dashboardItem.href}
+          <Link
+            href={dashboardItem.href}
             onClick={onItemClick}
-            className={({ isActive }: { isActive: boolean }) => cn(
+            className={cn(
               "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
               "hover:bg-accent hover:text-accent-foreground",
-              isActive 
-                ? "bg-primary text-primary-foreground shadow-sm" 
+              pathname === '/dashboard' || pathname === '/'
+                ? "bg-primary text-primary-foreground shadow-sm"
                 : "text-muted-foreground",
               isCollapsed && "justify-center px-2"
             )}
           >
             <dashboardItem.icon className="w-5 h-5 flex-shrink-0" />
             {!isCollapsed && <span>{dashboardItem.label}</span>}
-          </NavLink>
+          </Link>
         </nav>
 
         {/* Propiedades Group */}
         {!isCollapsed ? (
-          <Collapsible open={propertiesOpen} onOpenChange={setPropertiesOpen}>
+          <Collapsible open={isPropertiesActive} onOpenChange={() => {}}>
             <CollapsibleTrigger asChild>
               <button
                 className={cn(
                   "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 mx-3",
                   "hover:bg-accent hover:text-accent-foreground",
-                  isPropertiesActive 
-                    ? "bg-primary/10 text-primary" 
+                  isPropertiesActive
+                    ? "bg-primary/10 text-primary"
                     : "text-muted-foreground"
                 )}
               >
                 <propertiesGroup.icon className="w-5 h-5 flex-shrink-0" />
                 <span className="flex-1 text-left">{propertiesGroup.label}</span>
-                <ChevronDown className={cn("w-4 h-4 transition-transform", propertiesOpen && "rotate-180")} />
+                <ChevronDown className={cn("w-4 h-4 transition-transform", isPropertiesActive && "rotate-180")} />
               </button>
             </CollapsibleTrigger>
             <CollapsibleContent>
               <nav className="px-3 space-y-1 mt-1 ml-4 border-l-2 border-border/50">
                 {propertiesGroup.items.map((item) => (
-                  <NavLink
+                  <Link
                     key={item.href}
-                    to={item.href}
+                    href={item.href}
                     onClick={onItemClick}
-                    className={({ isActive }: { isActive: boolean }) => cn(
+                    className={cn(
                       "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200",
                       "hover:bg-accent hover:text-accent-foreground",
-                      isActive 
-                        ? "text-primary font-medium" 
+                      pathname?.startsWith(item.href)
+                        ? "text-primary font-medium"
                         : "text-muted-foreground"
                     )}
                   >
                     <item.icon className="w-4 h-4 flex-shrink-0" />
                     <span>{item.label}</span>
-                  </NavLink>
+                  </Link>
                 ))}
               </nav>
             </CollapsibleContent>
           </Collapsible>
         ) : (
           <nav className="px-3 space-y-1 mb-2">
-            <NavLink
-              to="/properties"
-              onClick={onItemClick}
-              className={() => cn(
+            <Link
+              href="/properties"
+              className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
                 "hover:bg-accent hover:text-accent-foreground",
-                isPropertiesActive 
-                  ? "bg-primary text-primary-foreground shadow-sm" 
+                isPropertiesActive
+                  ? "bg-primary text-primary-foreground shadow-sm"
                   : "text-muted-foreground",
                 "justify-center px-2"
               )}
             >
               <propertiesGroup.icon className="w-5 h-5 flex-shrink-0" />
-            </NavLink>
+            </Link>
           </nav>
         )}
 
+        {/* Admin Condominios Group */}
+        <div className="mt-2">
+          <NavGroupComponent
+            group={adminCondominiosGroup}
+            isCollapsed={isCollapsed}
+            isActive={isAdminCondominiosActive}
+          />
+        </div>
+
+        {/* Airbnb Group */}
+        <div className="mt-2">
+          <NavGroupComponent
+            group={airbnbGroup}
+            isCollapsed={isCollapsed}
+            isActive={isAirbnbActive}
+          />
+        </div>
+
+        {/* Reportes Group */}
+        <div className="mt-2">
+          <NavGroupComponent
+            group={reportesGroup}
+            isCollapsed={isCollapsed}
+            isActive={isReportesActive}
+          />
+        </div>
+
         {/* Main Nav Items */}
-        <nav className="px-3 space-y-1 mt-2">
+        <nav className="px-3 space-y-1 mt-4">
           {mainNavItems.map((item) => (
-            <NavLink
+            <Link
               key={item.href}
-              to={item.href}
+              href={item.href}
               onClick={onItemClick}
-              className={({ isActive }: { isActive: boolean }) => cn(
+              className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
                 "hover:bg-accent hover:text-accent-foreground",
-                isActive 
-                  ? "bg-primary text-primary-foreground shadow-sm" 
+                pathname?.startsWith(item.href)
+                  ? "bg-primary text-primary-foreground shadow-sm"
                   : "text-muted-foreground",
                 isCollapsed && "justify-center px-2"
               )}
             >
               <item.icon className="w-5 h-5 flex-shrink-0" />
               {!isCollapsed && <span>{item.label}</span>}
-            </NavLink>
+            </Link>
           ))}
         </nav>
 
-        {/* Admin Condominios Group */}
-        <div className="mt-2">
-          <NavGroupComponent 
-            group={adminCondominiosGroup} 
-            isCollapsed={isCollapsed} 
-            isActive={isAdminCondominiosActive} 
-          />
-        </div>
-
-        {/* AIRBNB Group */}
-        <div className="mt-2">
-          <NavGroupComponent 
-            group={airbnbGroup} 
-            isCollapsed={isCollapsed} 
-            isActive={isAirbnbActive} 
-          />
-        </div>
-
-        {/* Reportes Group */}
-        <div className="mt-2">
-          <NavGroupComponent 
-            group={reportesGroup} 
-            isCollapsed={isCollapsed} 
-            isActive={isReportesActive} 
-          />
-        </div>
-
         {/* Admin Items */}
-        {isAdmin && (
-          <div className={cn("mt-6 pt-6 border-t border-border/50", isCollapsed && "px-2")}>
-            {!isCollapsed && (
-              <p className="px-3 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Administración
-              </p>
-            )}
-            <nav className="px-3 space-y-1">
-              {adminNavItems.map((item) => (
-                <NavLink
-                  key={item.href}
-                  to={item.href}
-                  onClick={onItemClick}
-                  className={({ isActive }: { isActive: boolean }) => cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
-                    "hover:bg-accent hover:text-accent-foreground",
-                    isActive 
-                      ? "bg-purple-500 text-white shadow-sm" 
-                      : "text-muted-foreground",
-                    isCollapsed && "justify-center px-2"
-                  )}
-                >
-                  <item.icon className="w-5 h-5 flex-shrink-0" />
-                  {!isCollapsed && <span>{item.label}</span>}
-                </NavLink>
-              ))}
-            </nav>
-          </div>
-        )}
-
-        {/* System Items */}
-        <div className={cn("mt-6 pt-6 border-t border-border/50", isCollapsed && "px-2")}>
-          {!isCollapsed && (
-            <p className="px-3 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Sistema
-            </p>
-          )}
-          <nav className="px-3 space-y-1">
-            {secondaryNavItems.map((item) => (
-              <NavLink
+        {user?.role === 'admin' && (
+          <nav className="px-3 space-y-1 mt-4">
+            <div className={cn(
+              "px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider",
+              isCollapsed && "text-center"
+            )}>
+              {!isCollapsed && 'Administración'}
+            </div>
+            {adminNavItems.map((item) => (
+              <Link
                 key={item.href}
-                to={item.href}
+                href={item.href}
                 onClick={onItemClick}
-                className={({ isActive }: { isActive: boolean }) => cn(
+                className={cn(
                   "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
                   "hover:bg-accent hover:text-accent-foreground",
-                  isActive 
-                    ? "bg-primary text-primary-foreground shadow-sm" 
+                  pathname?.startsWith(item.href)
+                    ? "bg-primary text-primary-foreground shadow-sm"
                     : "text-muted-foreground",
                   isCollapsed && "justify-center px-2"
                 )}
               >
                 <item.icon className="w-5 h-5 flex-shrink-0" />
-                {!isCollapsed && (
-                  <>
-                    <span className="flex-1">{item.label}</span>
-                  </>
-                )}
-              </NavLink>
+                {!isCollapsed && <span>{item.label}</span>}
+              </Link>
             ))}
           </nav>
-        </div>
+        )}
+
+        {/* Secondary Items */}
+        <nav className="px-3 space-y-1 mt-4">
+          {secondaryNavItems.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={onItemClick}
+              className={cn(
+                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
+                "hover:bg-accent hover:text-accent-foreground",
+                pathname?.startsWith(item.href)
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground",
+                isCollapsed && "justify-center px-2"
+              )}
+            >
+              <item.icon className="w-5 h-5 flex-shrink-0" />
+              {!isCollapsed && <span>{item.label}</span>}
+            </Link>
+          ))}
+        </nav>
       </ScrollArea>
 
       {/* User Profile */}
       <div className={cn(
-        "p-4 border-t border-border/50",
+        "border-t border-border/50 p-4",
         isCollapsed && "px-2"
       )}>
         <div className={cn(
           "flex items-center gap-3",
           isCollapsed && "justify-center"
         )}>
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white font-semibold flex-shrink-0">
+          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-600 to-blue-400 flex items-center justify-center text-white font-semibold text-sm">
             {userInitials}
           </div>
           {!isCollapsed && (
-            <>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{user?.name} {user?.lastName}</p>
-                <div className="flex items-center gap-1">
-                  {isAdmin ? (
-                    <Shield className="w-3 h-3 text-purple-500" />
-                  ) : (
-                    <User className="w-3 h-3 text-blue-500" />
-                  )}
-                  <p className="text-xs text-muted-foreground truncate">
-                    {isAdmin ? 'Administrador' : 'Agente'}
-                  </p>
-                </div>
-              </div>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={logout}
-                className="text-muted-foreground hover:text-destructive"
-              >
-                <LogOut className="w-4 h-4" />
-              </Button>
-            </>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium truncate">{user?.name} {user?.lastName}</p>
+              <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+            </div>
+          )}
+          {!isCollapsed && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={logout}
+              className="text-muted-foreground hover:text-destructive"
+            >
+              <LogOut className="w-4 h-4" />
+            </Button>
           )}
         </div>
       </div>
 
-      {/* Collapse Toggle */}
+      {/* Toggle Button */}
       <button
         onClick={onToggle}
         className={cn(
-          "absolute -right-3 top-20 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-md hover:bg-primary/90 transition-colors",
-          "hidden lg:flex"
+          "absolute -right-3 top-20 w-6 h-6 rounded-full bg-primary text-primary-foreground shadow-md flex items-center justify-center hover:bg-primary/90 transition-colors",
+          isCollapsed && "rotate-180"
         )}
       >
-        {isCollapsed ? <ChevronRight className="w-3 h-3" /> : <ChevronLeft className="w-3 h-3" />}
+        <ChevronLeft className="w-3 h-3" />
       </button>
     </>
   );
 
   return (
     <>
-      {/* Mobile Trigger */}
-      <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+      {/* Desktop Sidebar */}
+      <aside className={cn(
+        "hidden lg:flex flex-col fixed left-0 top-0 h-screen bg-card border-r border-border transition-all duration-300 z-40",
+        isCollapsed ? "w-20" : "w-64"
+      )}>
+        <NavContent />
+      </aside>
+
+      {/* Mobile Sidebar */}
+      <Sheet>
         <SheetTrigger asChild className="lg:hidden">
           <Button variant="ghost" size="icon" className="fixed top-4 left-4 z-50">
             <Menu className="w-5 h-5" />
           </Button>
         </SheetTrigger>
-        <SheetContent side="left" className="w-72 p-0">
-          <div className="flex flex-col h-full">
-            <NavContent onItemClick={() => setMobileOpen(false)} />
-          </div>
+        <SheetContent side="left" className="w-64 p-0">
+          <NavContent onItemClick={() => {}} />
         </SheetContent>
       </Sheet>
-
-      {/* Desktop Sidebar */}
-      <aside
-        className={cn(
-          "hidden lg:flex flex-col fixed left-0 top-0 h-screen bg-card border-r border-border/50 z-40 transition-all duration-300",
-          isCollapsed ? "w-20" : "w-72"
-        )}
-      >
-        <NavContent />
-      </aside>
     </>
   );
 }
-
-export default Sidebar;
