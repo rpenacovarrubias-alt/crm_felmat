@@ -1,8 +1,12 @@
-// ============================================
+// ==========================================
 // HEADER PRINCIPAL
-// ============================================
+// Compatible con Next.js App Router
+// ==========================================
+
+'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import { useNotifications } from '@/hooks/useDatabase';
 import { Button } from '@/components/ui/button';
@@ -34,7 +38,6 @@ import {
   Users,
   Calendar,
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
 
 interface HeaderProps {
   sidebarCollapsed: boolean;
@@ -45,8 +48,8 @@ export function Header({ sidebarCollapsed }: HeaderProps) {
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications(user?.id);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const userInitials = user 
-    ? `${user.name.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase()
+  const userInitials = user
+    ? `${user.name?.charAt(0) || ''}${user.lastName?.charAt(0) || ''}`.toUpperCase()
     : '?';
 
   const recentNotifications = notifications.slice(0, 5);
@@ -54,8 +57,8 @@ export function Header({ sidebarCollapsed }: HeaderProps) {
   return (
     <header
       className={cn(
-        "fixed top-0 right-0 h-16 bg-card/80 backdrop-blur-md border-b border-border/50 z-30 flex items-center justify-between px-4 lg:px-6 transition-all duration-300",
-        sidebarCollapsed ? "left-20" : "left-72"
+        'fixed top-0 right-0 h-16 bg-card/80 backdrop-blur-md border-b border-border/50 z-30 flex items-center justify-between px-4 lg:px-6 transition-all duration-300',
+        sidebarCollapsed ? 'left-20' : 'left-72'
       )}
     >
       {/* Search */}
@@ -86,19 +89,19 @@ export function Header({ sidebarCollapsed }: HeaderProps) {
             <DropdownMenuLabel>Crear nuevo</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link to="/properties/new" className="flex items-center gap-2 cursor-pointer">
+              <Link href="/properties/new" className="flex items-center gap-2 cursor-pointer">
                 <Building2 className="w-4 h-4" />
                 Propiedad
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link to="/leads/new" className="flex items-center gap-2 cursor-pointer">
+              <Link href="/leads/new" className="flex items-center gap-2 cursor-pointer">
                 <Users className="w-4 h-4" />
                 Cliente
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link to="/activities/new" className="flex items-center gap-2 cursor-pointer">
+              <Link href="/activities/new" className="flex items-center gap-2 cursor-pointer">
                 <Calendar className="w-4 h-4" />
                 Actividad
               </Link>
@@ -112,8 +115,8 @@ export function Header({ sidebarCollapsed }: HeaderProps) {
             <Button variant="ghost" size="icon" className="relative">
               <Bell className="w-5 h-5" />
               {unreadCount > 0 && (
-                <Badge 
-                  variant="destructive" 
+                <Badge
+                  variant="destructive"
                   className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
                 >
                   {unreadCount > 9 ? '9+' : unreadCount}
@@ -142,22 +145,26 @@ export function Header({ sidebarCollapsed }: HeaderProps) {
                   <div
                     key={notification.id}
                     className={cn(
-                      "p-4 border-b border-border/50 hover:bg-accent/50 cursor-pointer transition-colors",
-                      !notification.isRead && "bg-primary/5"
+                      'p-4 border-b border-border/50 hover:bg-accent/50 cursor-pointer transition-colors',
+                      !notification.isRead && 'bg-primary/5'
                     )}
                     onClick={() => markAsRead(notification.id)}
                   >
                     <div className="flex items-start gap-3">
-                      <div className={cn(
-                        "w-2 h-2 rounded-full mt-2 flex-shrink-0",
-                        notification.type === 'success' && "bg-green-500",
-                        notification.type === 'warning' && "bg-yellow-500",
-                        notification.type === 'error' && "bg-red-500",
-                        notification.type === 'info' && "bg-blue-500",
-                      )} />
+                      <div
+                        className={cn(
+                          'w-2 h-2 rounded-full mt-2 flex-shrink-0',
+                          notification.type === 'success' && 'bg-green-500',
+                          notification.type === 'warning' && 'bg-yellow-500',
+                          notification.type === 'error' && 'bg-red-500',
+                          notification.type === 'info' && 'bg-blue-500'
+                        )}
+                      />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium">{notification.title}</p>
-                        <p className="text-xs text-muted-foreground line-clamp-2">{notification.message}</p>
+                        <p className="text-xs text-muted-foreground line-clamp-2">
+                          {notification.message}
+                        </p>
                         <p className="text-xs text-muted-foreground mt-1">
                           {new Date(notification.createdAt).toLocaleDateString('es-MX', {
                             hour: '2-digit',
@@ -175,7 +182,7 @@ export function Header({ sidebarCollapsed }: HeaderProps) {
             </div>
             <div className="p-2 border-t border-border/50">
               <Button variant="ghost" size="sm" className="w-full" asChild>
-                <Link to="/notifications">Ver todas</Link>
+                <Link href="/notifications">Ver todas</Link>
               </Button>
             </div>
           </PopoverContent>
@@ -195,19 +202,22 @@ export function Header({ sidebarCollapsed }: HeaderProps) {
             <DropdownMenuLabel>Mi Cuenta</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link to="/profile" className="flex items-center gap-2 cursor-pointer">
+              <Link href="/profile" className="flex items-center gap-2 cursor-pointer">
                 <User className="w-4 h-4" />
                 Perfil
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link to="/settings" className="flex items-center gap-2 cursor-pointer">
+              <Link href="/settings" className="flex items-center gap-2 cursor-pointer">
                 <Settings className="w-4 h-4" />
                 Configuración
               </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={logout} className="flex items-center gap-2 cursor-pointer text-destructive">
+            <DropdownMenuItem
+              onClick={logout}
+              className="flex items-center gap-2 cursor-pointer text-destructive"
+            >
               <LogOut className="w-4 h-4" />
               Cerrar sesión
             </DropdownMenuItem>
@@ -217,5 +227,3 @@ export function Header({ sidebarCollapsed }: HeaderProps) {
     </header>
   );
 }
-
-export default Header;
