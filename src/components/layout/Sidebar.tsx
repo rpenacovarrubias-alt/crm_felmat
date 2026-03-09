@@ -1,13 +1,10 @@
 // ==========================================
 // SIDEBAR DE NAVEGACIÓN - MENÚS COMPLETOS
-// Compatible con Next.js App Router
+// Compatible con React Router + Vite
 // ==========================================
 
-'use client';
-
 import { useState } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -40,7 +37,6 @@ import {
   TrendingUp,
   Shield,
   User,
-  // Nuevos iconos
   Building,
   FileText,
   Receipt,
@@ -159,7 +155,7 @@ function NavGroupComponent({
     return (
       <nav className="px-3 space-y-1 mb-2">
         <Link
-          href={group.items[0]?.href || '#'}
+          to={group.items[0]?.href || '#'}
           className={cn(
             "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
             "hover:bg-accent hover:text-accent-foreground",
@@ -197,7 +193,7 @@ function NavGroupComponent({
           {group.items.map((item) => (
             <Link
               key={item.href}
-              href={item.href}
+              to={item.href}
               className={cn(
                 "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200",
                 "hover:bg-accent hover:text-accent-foreground",
@@ -215,26 +211,26 @@ function NavGroupComponent({
 }
 
 export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
-  const pathname = usePathname();
+  const location = useLocation();
   const { user, logout } = useAuth();
 
   const userInitials = user
     ? `${user.name?.charAt(0) || ''}${user.lastName?.charAt(0) || ''}`.toUpperCase()
     : '?';
 
-  const isPropertiesActive = pathname?.startsWith('/properties') ||
-    pathname?.startsWith('/estimaciones') ||
-    pathname?.startsWith('/links') ||
-    pathname?.startsWith('/shared-lists') ||
-    pathname?.startsWith('/performance');
+  const isPropertiesActive = location.pathname.startsWith('/properties') ||
+    location.pathname.startsWith('/estimaciones') ||
+    location.pathname.startsWith('/links') ||
+    location.pathname.startsWith('/shared-lists') ||
+    location.pathname.startsWith('/performance');
 
-  const isAdminCondominiosActive = pathname?.startsWith('/carta-presentacion') ||
-    pathname?.startsWith('/cotizaciones') ||
-    pathname?.startsWith('/admin/condominios') ||
-    pathname?.startsWith('/legal');
+  const isAdminCondominiosActive = location.pathname.startsWith('/carta-presentacion') ||
+    location.pathname.startsWith('/cotizaciones') ||
+    location.pathname.startsWith('/admin/condominios') ||
+    location.pathname.startsWith('/legal');
 
-  const isAirbnbActive = pathname?.startsWith('/airbnb');
-  const isReportesActive = pathname?.startsWith('/reportes');
+  const isAirbnbActive = location.pathname.startsWith('/airbnb');
+  const isReportesActive = location.pathname.startsWith('/reportes');
 
   const NavContent = ({ onItemClick }: { onItemClick?: () => void }) => (
     <>
@@ -260,12 +256,12 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
         {/* Dashboard */}
         <nav className="px-3 space-y-1 mb-2">
           <Link
-            href={dashboardItem.href}
+            to={dashboardItem.href}
             onClick={onItemClick}
             className={cn(
               "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
               "hover:bg-accent hover:text-accent-foreground",
-              pathname === '/dashboard' || pathname === '/'
+              location.pathname === '/dashboard' || location.pathname === '/'
                 ? "bg-primary text-primary-foreground shadow-sm"
                 : "text-muted-foreground",
               isCollapsed && "justify-center px-2"
@@ -299,12 +295,12 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                 {propertiesGroup.items.map((item) => (
                   <Link
                     key={item.href}
-                    href={item.href}
+                    to={item.href}
                     onClick={onItemClick}
                     className={cn(
                       "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200",
                       "hover:bg-accent hover:text-accent-foreground",
-                      pathname?.startsWith(item.href)
+                      location.pathname.startsWith(item.href)
                         ? "text-primary font-medium"
                         : "text-muted-foreground"
                     )}
@@ -319,7 +315,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
         ) : (
           <nav className="px-3 space-y-1 mb-2">
             <Link
-              href="/properties"
+              to="/properties"
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
                 "hover:bg-accent hover:text-accent-foreground",
@@ -366,12 +362,12 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
           {mainNavItems.map((item) => (
             <Link
               key={item.href}
-              href={item.href}
+              to={item.href}
               onClick={onItemClick}
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
                 "hover:bg-accent hover:text-accent-foreground",
-                pathname?.startsWith(item.href)
+                location.pathname.startsWith(item.href)
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "text-muted-foreground",
                 isCollapsed && "justify-center px-2"
@@ -395,12 +391,12 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
             {adminNavItems.map((item) => (
               <Link
                 key={item.href}
-                href={item.href}
+                to={item.href}
                 onClick={onItemClick}
                 className={cn(
                   "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
                   "hover:bg-accent hover:text-accent-foreground",
-                  pathname?.startsWith(item.href)
+                  location.pathname.startsWith(item.href)
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "text-muted-foreground",
                   isCollapsed && "justify-center px-2"
@@ -418,12 +414,12 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
           {secondaryNavItems.map((item) => (
             <Link
               key={item.href}
-              href={item.href}
+              to={item.href}
               onClick={onItemClick}
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
                 "hover:bg-accent hover:text-accent-foreground",
-                pathname?.startsWith(item.href)
+                location.pathname.startsWith(item.href)
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "text-muted-foreground",
                 isCollapsed && "justify-center px-2"
@@ -485,7 +481,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
       {/* Desktop Sidebar */}
       <aside className={cn(
         "hidden lg:flex flex-col fixed left-0 top-0 h-screen bg-card border-r border-border transition-all duration-300 z-40",
-        isCollapsed ? "w-20" : "w-64"
+        isCollapsed ? "w-20" : "w-72"
       )}>
         <NavContent />
       </aside>
@@ -497,7 +493,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
             <Menu className="w-5 h-5" />
           </Button>
         </SheetTrigger>
-        <SheetContent side="left" className="w-64 p-0">
+        <SheetContent side="left" className="w-72 p-0">
           <NavContent onItemClick={() => {}} />
         </SheetContent>
       </Sheet>

@@ -1,12 +1,10 @@
 // ==========================================
 // HEADER PRINCIPAL
-// Compatible con Next.js App Router
+// Compatible con React Router + Vite
 // ==========================================
 
-'use client';
-
 import { useState } from 'react';
-import Link from 'next/link';
+import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useNotifications } from '@/hooks/useDatabase';
 import { Button } from '@/components/ui/button';
@@ -89,19 +87,19 @@ export function Header({ sidebarCollapsed }: HeaderProps) {
             <DropdownMenuLabel>Crear nuevo</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link href="/properties/new" className="flex items-center gap-2 cursor-pointer">
+              <Link to="/properties/new" className="flex items-center gap-2 cursor-pointer">
                 <Building2 className="w-4 h-4" />
                 Propiedad
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link href="/leads/new" className="flex items-center gap-2 cursor-pointer">
+              <Link to="/leads/new" className="flex items-center gap-2 cursor-pointer">
                 <Users className="w-4 h-4" />
                 Cliente
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link href="/activities/new" className="flex items-center gap-2 cursor-pointer">
+              <Link to="/activities/new" className="flex items-center gap-2 cursor-pointer">
                 <Calendar className="w-4 h-4" />
                 Actividad
               </Link>
@@ -182,7 +180,7 @@ export function Header({ sidebarCollapsed }: HeaderProps) {
             </div>
             <div className="p-2 border-t border-border/50">
               <Button variant="ghost" size="sm" className="w-full" asChild>
-                <Link href="/notifications">Ver todas</Link>
+                <Link to="/notifications">Ver todas</Link>
               </Button>
             </div>
           </PopoverContent>
@@ -202,13 +200,13 @@ export function Header({ sidebarCollapsed }: HeaderProps) {
             <DropdownMenuLabel>Mi Cuenta</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link href="/profile" className="flex items-center gap-2 cursor-pointer">
+              <Link to="/profile" className="flex items-center gap-2 cursor-pointer">
                 <User className="w-4 h-4" />
                 Perfil
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link href="/settings" className="flex items-center gap-2 cursor-pointer">
+              <Link to="/settings" className="flex items-center gap-2 cursor-pointer">
                 <Settings className="w-4 h-4" />
                 Configuración
               </Link>
