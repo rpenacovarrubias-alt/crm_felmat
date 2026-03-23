@@ -1,5 +1,3 @@
-'use client';
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -91,7 +89,7 @@ export default function ListaAnuncios({ modo = 'admin' }: { modo?: 'admin' | 'ai
   const [isPublishing, setIsPublishing] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
 
-  const basePath = modo === 'admin' ? '/admin/condominios' : '/airbnb';
+  const basePath = modo === 'admin' ? '' : '/airbnb';
 
   const cargarAnuncios = useCallback(async () => {
     setLoading(true);

@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Wand2, Copy, Check } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 interface AnuncioGeneratorProps {
   onGenerate?: (content: string) => void;
@@ -25,7 +25,6 @@ export function AnuncioGenerator({ onGenerate, propertyData }: AnuncioGeneratorP
   const [generatedContent, setGeneratedContent] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
-  const { toast } = useToast();
 
   const generatePrompt = () => {
     if (propertyData) {
@@ -70,15 +69,12 @@ Incluye emojis, hashtags relevantes y un call-to-action.`;
       setGeneratedContent(mockGenerated);
       onGenerate?.(mockGenerated);
       
-      toast({
-        title: "✅ Anuncio generado",
-        description: "El contenido ha sido creado exitosamente.",
+      toast.success('Anuncio generado', {
+        description: 'El contenido ha sido creado exitosamente.',
       });
     } catch (error) {
-      toast({
-        title: "❌ Error",
-        description: "No se pudo generar el anuncio. Intenta de nuevo.",
-        variant: "destructive",
+      toast.error('Error', {
+        description: 'No se pudo generar el anuncio. Intenta de nuevo.',
       });
     } finally {
       setIsGenerating(false);
@@ -89,10 +85,7 @@ Incluye emojis, hashtags relevantes y un call-to-action.`;
     navigator.clipboard.writeText(generatedContent);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-    toast({
-      title: "📋 Copiado",
-      description: "Contenido copiado al portapapeles.",
-    });
+    toast('Copiado al portapapeles');
   };
 
   return (

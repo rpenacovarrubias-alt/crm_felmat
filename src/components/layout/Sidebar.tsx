@@ -79,11 +79,11 @@ const propertiesGroup: NavGroup = {
   label: 'Propiedades',
   icon: Building2,
   items: [
-    { label: 'Inventario', href: '/properties', icon: Package },
+    { label: 'Inventario', href: '/propiedades', icon: Package },
     { label: 'Estimaciones', href: '/estimaciones', icon: Calculator },
-    { label: 'Vinculaciones', href: '/links', icon: Link2 },
-    { label: 'Listas compartidas', href: '/shared-lists', icon: Share2 },
-    { label: 'Desempeño', href: '/performance', icon: TrendingUp },
+    { label: 'Vinculaciones', href: '/vinculaciones', icon: Link2 },
+    { label: 'Listas compartidas', href: '/listas-compartidas', icon: Share2 },
+    { label: 'Desempeño', href: '/propiedades/desempeno', icon: TrendingUp },
   ],
 };
 
@@ -94,8 +94,8 @@ const adminCondominiosGroup: NavGroup = {
   items: [
     { label: 'Carta Presentación', href: '/carta-presentacion', icon: FileText },
     { label: 'Cotizaciones', href: '/cotizaciones', icon: Receipt },
-    { label: 'Anuncios', href: '/admin/condominios/anuncios', icon: Megaphone },
-    { label: 'Legal', href: '/legal/compra-venta', icon: Scale },
+    { label: 'Anuncios', href: '/anuncios', icon: Megaphone },
+    { label: 'Legal', href: '/legal/contratos', icon: Scale },
   ],
 };
 
@@ -105,11 +105,10 @@ const airbnbGroup: NavGroup = {
   icon: Hotel,
   items: [
     { label: 'Anuncio', href: '/airbnb/anuncios', icon: Megaphone },
-    { label: 'Propiedades', href: '/airbnb/propiedades', icon: Building },
-    { label: 'Fichas Técnicas', href: '/airbnb/fichas', icon: ClipboardList },
-    { label: 'Administración', href: '/airbnb/administracion', icon: Briefcase },
-    { label: 'Comisión', href: '/airbnb/comision', icon: DollarSign },
-    { label: 'Limpieza', href: '/airbnb/limpieza', icon: Sparkles },
+    { label: 'Calendario', href: '/airbnb/calendario', icon: Calendar },
+    { label: 'Precios', href: '/airbnb/precios', icon: DollarSign },
+    { label: 'Mensajes', href: '/airbnb/mensajes', icon: ClipboardList },
+    { label: 'Reservas', href: '/airbnb/reservas', icon: Briefcase },
   ],
 };
 
@@ -118,25 +117,25 @@ const reportesGroup: NavGroup = {
   label: 'Reportes',
   icon: PieChart,
   items: [
-    { label: 'Ingresos por Propiedad', href: '/reportes/ingresos-propiedad', icon: Building2 },
-    { label: 'Ingresos Generales', href: '/reportes/ingresos-generales', icon: Trending },
+    { label: 'Ventas', href: '/reportes/ventas', icon: Building2 },
+    { label: 'Leads', href: '/reportes/leads', icon: Trending },
   ],
 };
 
 const mainNavItems: NavItem[] = [
   { label: 'Clientes', href: '/leads', icon: Users },
-  { label: 'Calendario', href: '/calendar', icon: Calendar },
-  { label: 'Mi Sitio Web', href: '/website', icon: Globe },
+  { label: 'Calendario', href: '/calendario', icon: Calendar },
+  { label: 'Mi Sitio Web', href: '/sitio-web', icon: Globe },
 ];
 
 const adminNavItems: NavItem[] = [
-  { label: 'Gestión de Usuarios', href: '/users', icon: Shield, adminOnly: true },
-  { label: 'Estadísticas', href: '/analytics', icon: BarChart3, adminOnly: true },
+  { label: 'Gestión de Usuarios', href: '/admin/usuarios', icon: Shield, adminOnly: true },
+  { label: 'Condominios', href: '/admin/condominios', icon: Building, adminOnly: true },
 ];
 
 const secondaryNavItems: NavItem[] = [
-  { label: 'Notificaciones', href: '/notifications', icon: Bell },
-  { label: 'Configuración', href: '/settings', icon: Settings },
+  { label: 'Notificaciones', href: '/notificaciones', icon: Bell },
+  { label: 'Configuración', href: '/configuracion', icon: Settings },
 ];
 
 // Componente para renderizar un grupo colapsable
@@ -218,11 +217,10 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
     ? `${user.name?.charAt(0) || ''}${user.lastName?.charAt(0) || ''}`.toUpperCase()
     : '?';
 
-  const isPropertiesActive = location.pathname.startsWith('/properties') ||
+  const isPropertiesActive = location.pathname.startsWith('/propiedades') ||
     location.pathname.startsWith('/estimaciones') ||
-    location.pathname.startsWith('/links') ||
-    location.pathname.startsWith('/shared-lists') ||
-    location.pathname.startsWith('/performance');
+    location.pathname.startsWith('/vinculaciones') ||
+    location.pathname.startsWith('/listas-compartidas');
 
   const isAdminCondominiosActive = location.pathname.startsWith('/carta-presentacion') ||
     location.pathname.startsWith('/cotizaciones') ||
@@ -315,7 +313,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
         ) : (
           <nav className="px-3 space-y-1 mb-2">
             <Link
-              to="/properties"
+              to="/propiedades"
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
                 "hover:bg-accent hover:text-accent-foreground",

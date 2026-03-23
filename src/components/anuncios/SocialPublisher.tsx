@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Facebook, Instagram, MapPin, Calendar, Clock, Send } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { useSocialPublish } from '@/hooks/useSocialPublish';
 
 interface SocialPublisherProps {
@@ -23,7 +23,6 @@ export function SocialPublisher({ content, images, propertyId }: SocialPublisher
   const [scheduleDate, setScheduleDate] = useState('');
   const [scheduleTime, setScheduleTime] = useState('');
   const { publish, isPublishing } = useSocialPublish();
-  const { toast } = useToast();
 
   const togglePlatform = (platform: keyof typeof selectedPlatforms) => {
     setSelectedPlatforms(prev => ({
@@ -38,19 +37,15 @@ export function SocialPublisher({ content, images, propertyId }: SocialPublisher
       .map(([platform]) => platform);
 
     if (platforms.length === 0) {
-      toast({
-        title: "⚠️ Selecciona plataformas",
-        description: "Elige al menos una red social para publicar.",
-        variant: "destructive",
+      toast.error('Selecciona plataformas', {
+        description: 'Elige al menos una red social para publicar.',
       });
       return;
     }
 
     if (!content) {
-      toast({
-        title: "⚠️ Sin contenido",
-        description: "Genera o escribe el contenido del anuncio primero.",
-        variant: "destructive",
+      toast.error('Sin contenido', {
+        description: 'Genera o escribe el contenido del anuncio primero.',
       });
       return;
     }
@@ -65,18 +60,15 @@ export function SocialPublisher({ content, images, propertyId }: SocialPublisher
       });
 
       if (result.success) {
-        toast({
-          title: "✅ Publicado exitosamente",
-          description: publishNow 
-            ? "Tu anuncio ya está en redes sociales." 
+        toast.success('Publicado exitosamente', {
+          description: publishNow
+            ? 'Tu anuncio ya está en redes sociales.'
             : `Programado para ${scheduleDate} a las ${scheduleTime}`,
         });
       }
     } catch (error) {
-      toast({
-        title: "❌ Error al publicar",
-        description: "Hubo un problema. Revisa la configuración de APIs.",
-        variant: "destructive",
+      toast.error('Error al publicar', {
+        description: 'Hubo un problema. Revisa la configuración de APIs.',
       });
     }
   };

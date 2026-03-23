@@ -58,6 +58,10 @@ function AppRoutes() {
             <Route path="/propiedades/nueva" element={<ModulePlaceholder title="Nueva Propiedad" />} />
             <Route path="/propiedades/tipos" element={<ModulePlaceholder title="Tipos de Propiedades" />} />
             <Route path="/propiedades/amenidades" element={<ModulePlaceholder title="Amenidades" />} />
+            <Route path="/propiedades/desempeno" element={<ModulePlaceholder title="Desempeño de Propiedades" />} />
+            <Route path="/estimaciones" element={<ModulePlaceholder title="Estimaciones" />} />
+            <Route path="/vinculaciones" element={<ModulePlaceholder title="Vinculaciones" />} />
+            <Route path="/listas-compartidas" element={<ModulePlaceholder title="Listas Compartidas" />} />
             
             {/* Leads */}
             <Route path="/leads" element={<Leads />} />
@@ -86,8 +90,11 @@ function AppRoutes() {
             {/* Admin */}
             <Route path="/admin/usuarios" element={<Users />} />
             
-            {/* NUEVOS MENÚS - Funcionando */}
+            {/* Anuncios */}
             <Route path="/anuncios" element={<Anuncios />} />
+            <Route path="/anuncios/nuevo" element={<ModulePlaceholder title="Nuevo Anuncio" />} />
+            <Route path="/anuncios/:id" element={<ModulePlaceholder title="Detalle de Anuncio" />} />
+            <Route path="/anuncios/:id/editar" element={<ModulePlaceholder title="Editar Anuncio" />} />
             
             {/* Condominios */}
             <Route path="/admin/condominios" element={<ModulePlaceholder title="Administración de Condominios" />} />
@@ -108,10 +115,13 @@ function AppRoutes() {
             
             {/* Airbnb */}
             <Route path="/airbnb/anuncios" element={<Anuncios />} />
+            <Route path="/airbnb/anuncios/nuevo" element={<ModulePlaceholder title="Nuevo Anuncio Airbnb" />} />
+            <Route path="/airbnb/anuncios/:id" element={<ModulePlaceholder title="Detalle Anuncio Airbnb" />} />
+            <Route path="/airbnb/anuncios/:id/editar" element={<ModulePlaceholder title="Editar Anuncio Airbnb" />} />
             <Route path="/airbnb/calendario" element={<ModulePlaceholder title="Calendario Airbnb" />} />
             <Route path="/airbnb/precios" element={<ModulePlaceholder title="Precios Dinámicos" />} />
-            <Route path="/airbnb/mensajes" element={<ModulePlaceholder title="Mensajes" />} />
-            <Route path="/airbnb/reservas" element={<ModulePlaceholder title="Reservas" />} />
+            <Route path="/airbnb/mensajes" element={<ModulePlaceholder title="Mensajes Airbnb" />} />
+            <Route path="/airbnb/reservas" element={<ModulePlaceholder title="Reservas Airbnb" />} />
             
             {/* Reportes */}
             <Route path="/reportes/ventas" element={<ModulePlaceholder title="Reportes de Ventas" />} />

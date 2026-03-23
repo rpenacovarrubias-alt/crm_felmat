@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { History, RefreshCw, Eye, Trash2 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 interface Publication {
   id: string;
@@ -23,7 +23,6 @@ interface Publication {
 export function PublicationHistory() {
   const [publications, setPublications] = useState<Publication[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
 
   const loadHistory = async () => {
     setIsLoading(true);
@@ -51,10 +50,8 @@ export function PublicationHistory() {
       
       setPublications(mockHistory);
     } catch (error) {
-      toast({
-        title: "❌ Error",
-        description: "No se pudo cargar el historial.",
-        variant: "destructive",
+      toast.error('Error', {
+        description: 'No se pudo cargar el historial.',
       });
     } finally {
       setIsLoading(false);

@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Facebook, Instagram, MapPin, Webhook, Save, TestTube } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 interface ApiConfig {
   enabled: boolean;
@@ -25,8 +25,6 @@ export function SocialConfig() {
     webhook: { enabled: false, webhookUrl: '' },
   });
 
-  const { toast } = useToast();
-
   const updateConfig = (platform: keyof typeof configs, field: keyof ApiConfig, value: string | boolean) => {
     setConfigs(prev => ({
       ...prev,
@@ -42,15 +40,12 @@ export function SocialConfig() {
       // Aquí iría la llamada a la API para guardar
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      toast({
-        title: "✅ Configuración guardada",
+      toast.success('Configuración guardada', {
         description: `La configuración de ${platform} ha sido actualizada.`,
       });
     } catch (error) {
-      toast({
-        title: "❌ Error",
-        description: "No se pudo guardar la configuración.",
-        variant: "destructive",
+      toast.error('Error', {
+        description: 'No se pudo guardar la configuración.',
       });
     }
   };
@@ -58,15 +53,12 @@ export function SocialConfig() {
   const testConnection = async (platform: string) => {
     try {
       await new Promise(resolve => setTimeout(resolve, 1000));
-      toast({
-        title: "✅ Conexión exitosa",
+      toast.success('Conexión exitosa', {
         description: `La conexión con ${platform} está funcionando correctamente.`,
       });
     } catch (error) {
-      toast({
-        title: "❌ Error de conexión",
-        description: "No se pudo conectar. Verifica tus credenciales.",
-        variant: "destructive",
+      toast.error('Error de conexión', {
+        description: 'No se pudo conectar. Verifica tus credenciales.',
       });
     }
   };

@@ -1,26 +1,4 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  async headers() {
-    return [
-      {
-        source: '/:path*',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'no-store, max-age=0, must-revalidate',
-          },
-          {
-            key: 'Pragma',
-            value: 'no-cache',
-          },
-          {
-            key: 'Expires',
-            value: '0',
-          },
-        ],
-      },
-    ]
-  },
-}
-
-module.exports = nextConfig
+// Este archivo existe por un artefacto de la configuración inicial.
+// El proyecto usa Vite — ver vite.config.ts.
+// Los headers y configuración de producción están en vercel.json.
+// NO agregar configuración aquí.
