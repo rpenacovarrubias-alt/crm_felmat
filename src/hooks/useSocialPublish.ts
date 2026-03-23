@@ -1,7 +1,4 @@
 import { useState } from 'react';
-import { publishToFacebook } from '@/lib/social-apis/facebook';
-import { publishToInstagram } from '@/lib/social-apis/instagram';
-import { publishToGoogleBusiness } from '@/lib/social-apis/google-business';
 import { sendWebhook } from '@/lib/social-apis/webhook';
 
 interface PublishParams {
@@ -22,64 +19,37 @@ export function useSocialPublish() {
 
   const publish = async (params: PublishParams): Promise<PublishResult> => {
     setIsPublishing(true);
-    
-    const results: PublishResult['results'] = {};
-    
-    try {
-      // Si hay programación, enviar a webhook de n8n
-      if (params.scheduledFor) {
-        await sendWebhook({
-          type: 'schedule_post',
-          data: params,
-        });
-        
-        return {
-          success: true,
-          results: { webhook: { success: true } },
-        };
-      }
 
-      // Publicación inmediata
-      for (const platform of params.platforms) {
-        try {
-          switch (platform) {
-            case 'facebook':
-              const fbResult = await publishToFacebook(params);
-              results.facebook = { success: true, postId: fbResult.postId };
-              break;
-              
-            case 'instagram':
-              const igResult = await publishToInstagram(params);
-              results.instagram = { success: true, postId: igResult.postId };
-              break;
-              
-            case 'googleBusiness':
-              const gbResult = await publishToGoogleBusiness(params);
-              results.googleBusiness = { success: true, postId: gbResult.postId };
-              break;
-              
-            default:
-              results[platform] = { success: false, error: 'Plataforma no soportada' };
-          }
-        } catch (error) {
-          results[platform] = { 
-            success: false, 
-            error: error instanceof Error ? error.message : 'Error desconocido' 
-          };
-        }
-      }
+    try {
+      // Toda la publicación — inmediata o programada — se delega a n8n.
+      // n8n recibe el payload completo y decide cuándo y dónde publicar.
+      const type = params.scheduledFor ? 'schedule_post' : 'publish_now';
+
+      await sendWebhook({
+        type,
+        data: {
+          platforms: params.platforms,
+          content: params.content,
+          images: params.images ?? [],
+          propertyId: params.propertyId,
+          scheduledFor: params.scheduledFor,
+        },
+      });
 
       return {
-        success: Object.values(results).some(r => r.success),
-        results,
+        success: true,
+        results: { n8n: { success: true } },
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Error desconocido';
+      return {
+        success: false,
+        results: { n8n: { success: false, error: message } },
       };
     } finally {
       setIsPublishing(false);
     }
   };
 
-  return {
-    publish,
-    isPublishing,
-  };
+  return { publish, isPublishing };
 }

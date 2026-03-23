@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -7,6 +7,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Facebook, Instagram, MapPin, Webhook, Save, TestTube } from 'lucide-react';
 import { toast } from 'sonner';
+import { testWebhook } from '@/lib/social-apis/webhook';
+
+const N8N_URL_KEY = 'n8n_webhook_url';
 
 interface ApiConfig {
   enabled: boolean;
@@ -25,6 +28,17 @@ export function SocialConfig() {
     webhook: { enabled: false, webhookUrl: '' },
   });
 
+  // Cargar URL de n8n guardada desde localStorage al montar
+  useEffect(() => {
+    const savedUrl = localStorage.getItem(N8N_URL_KEY);
+    if (savedUrl) {
+      setConfigs(prev => ({
+        ...prev,
+        webhook: { enabled: true, webhookUrl: savedUrl },
+      }));
+    }
+  }, []);
+
   const updateConfig = (platform: keyof typeof configs, field: keyof ApiConfig, value: string | boolean) => {
     setConfigs(prev => ({
       ...prev,
@@ -37,9 +51,14 @@ export function SocialConfig() {
 
   const saveConfig = async (platform: keyof typeof configs) => {
     try {
-      // Aquí iría la llamada a la API para guardar
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
+      if (platform === 'webhook') {
+        const url = configs.webhook.webhookUrl.trim();
+        if (url) {
+          localStorage.setItem(N8N_URL_KEY, url);
+        } else {
+          localStorage.removeItem(N8N_URL_KEY);
+        }
+      }
       toast.success('Configuración guardada', {
         description: `La configuración de ${platform} ha sido actualizada.`,
       });
@@ -52,6 +71,20 @@ export function SocialConfig() {
 
   const testConnection = async (platform: string) => {
     try {
+      if (platform === 'webhook') {
+        const url = configs.webhook.webhookUrl.trim();
+        if (!url) {
+          toast.error('URL requerida', { description: 'Ingresa la URL del webhook antes de probar.' });
+          return;
+        }
+        const ok = await testWebhook(url);
+        if (ok) {
+          toast.success('Conexión exitosa', { description: 'El webhook de n8n respondió correctamente.' });
+        } else {
+          toast.error('Sin respuesta', { description: 'El webhook no respondió. Verifica la URL y que n8n esté activo.' });
+        }
+        return;
+      }
       await new Promise(resolve => setTimeout(resolve, 1000));
       toast.success('Conexión exitosa', {
         description: `La conexión con ${platform} está funcionando correctamente.`,
