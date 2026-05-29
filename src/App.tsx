@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Suspense, lazy } from 'react';
 import { Toaster } from '@/components/ui/sonner';
+import { Analytics } from '@vercel/analytics/react';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import MainLayout from '@/components/layout/MainLayout';
 import { AuthProvider } from '@/contexts/AuthContext';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
@@ -148,6 +150,8 @@ function App() {
       <AuthProvider>
         <AppRoutes />
         <Toaster />
+        <Analytics />
+        <SpeedInsights />
       </AuthProvider>
     </BrowserRouter>
   );
