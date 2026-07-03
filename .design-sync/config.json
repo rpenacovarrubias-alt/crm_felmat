@@ -1,0 +1,22 @@
+{
+  "projectId": "3fd6c6ed-9a64-4503-a13a-96405159ab8d",
+  "pkg": "crm-felmat",
+  "globalName": "CrmFelmat",
+  "shape": "package",
+  "srcDir": "src/components",
+  "cssEntry": "src/index.css",
+  "extraEntries": [
+    "./src/hooks/useAuth.tsx",
+    "./.design-sync/preview-utils.ts"
+  ],
+  "provider": {
+    "component": "BrowserRouter",
+    "inner": {
+      "component": "AuthProvider"
+    }
+  },
+  "componentSrcMap": {
+    "SearchFilters": null,
+    "Calendar": null
+  }
+}
