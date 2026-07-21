@@ -406,7 +406,7 @@ export function Dashboard() {
           value={pendingActivities}
           description="Tareas por completar"
           icon={Clock}
-          href="/activities"
+          href="/actividades"
           color="orange"
         />
       </div>

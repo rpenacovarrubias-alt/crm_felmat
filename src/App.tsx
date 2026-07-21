@@ -10,14 +10,14 @@ import { useDatabaseInit } from '@/hooks/useDatabase';
 
 // Lazy loading de páginas
 const Login = lazy(() => import('@/pages/Login'));
-const Dashboard = lazy(() => import('@/pages/Dashboard'));
+const Dashboard = lazy(() => import('@/components/dashboard/Dashboard'));
 const PropertyList = lazy(() => import('@/components/properties/PropertyList'));
 const PropertyForm = lazy(() => import('@/components/properties/PropertyForm'));
 const PropertyDetail = lazy(() => import('@/components/properties/PropertyDetail'));
 const LeadList = lazy(() => import('@/components/leads/LeadList'));
 const LeadForm = lazy(() => import('@/components/leads/LeadForm'));
 const Calendar = lazy(() => import('@/pages/Calendar'));
-const Website = lazy(() => import('@/pages/Website'));
+const Website = lazy(() => import('@/components/website/WebsiteBuilder'));
 const Activities = lazy(() => import('@/pages/Activities'));
 const Notifications = lazy(() => import('@/pages/Notifications'));
 const Settings = lazy(() => import('@/pages/Settings'));
