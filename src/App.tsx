@@ -6,13 +6,14 @@ import { SpeedInsights } from '@vercel/speed-insights/react';
 import MainLayout from '@/components/layout/MainLayout';
 import { AuthProvider } from '@/hooks/useAuth';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import { useDatabaseInit } from '@/hooks/useDatabase';
 
 // Lazy loading de páginas
 const Login = lazy(() => import('@/pages/Login'));
 const Dashboard = lazy(() => import('@/pages/Dashboard'));
 const Properties = lazy(() => import('@/pages/Properties'));
-const Leads = lazy(() => import('@/pages/Leads'));
-const LeadDetails = lazy(() => import('@/pages/LeadDetails'));
+const LeadList = lazy(() => import('@/components/leads/LeadList'));
+const LeadForm = lazy(() => import('@/components/leads/LeadForm'));
 const Calendar = lazy(() => import('@/pages/Calendar'));
 const Website = lazy(() => import('@/pages/Website'));
 const Activities = lazy(() => import('@/pages/Activities'));
@@ -66,10 +67,11 @@ function AppRoutes() {
             <Route path="/listas-compartidas" element={<ModulePlaceholder title="Listas Compartidas" />} />
             
             {/* Leads */}
-            <Route path="/leads" element={<Leads />} />
-            <Route path="/leads/nuevo" element={<LeadDetails />} />
-            <Route path="/leads/:id" element={<LeadDetails />} />
+            <Route path="/leads" element={<LeadList />} />
+            <Route path="/leads/new" element={<LeadForm />} />
             <Route path="/leads/importar" element={<ModulePlaceholder title="Importar Leads" />} />
+            <Route path="/leads/:id" element={<LeadForm />} />
+            <Route path="/leads/:id/edit" element={<LeadForm />} />
             
             {/* Calendar */}
             <Route path="/calendario" element={<Calendar />} />
@@ -145,6 +147,20 @@ function AppRoutes() {
 }
 
 function App() {
+  const { isReady, error } = useDatabaseInit();
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen text-center px-4">
+        <p className="text-muted-foreground">No se pudo iniciar la base de datos local. Intenta recargar la página.</p>
+      </div>
+    );
+  }
+
+  if (!isReady) {
+    return <PageLoader />;
+  }
+
   return (
     <BrowserRouter>
       <AuthProvider>

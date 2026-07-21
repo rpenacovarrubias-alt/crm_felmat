@@ -74,10 +74,11 @@ const sourceLabels: Record<string, string> = {
 };
 
 // Lead card component
-function LeadCard({ lead }: { lead: Lead }) {
+function LeadCard({ lead, draggable = false }: { lead: Lead; draggable?: boolean }) {
   const { properties } = useProperties();
   const interestedProperty = properties.find(p => p.id === lead.interestedPropertyId);
-  
+  const [isDragging, setIsDragging] = useState(false);
+
   const initials = `${lead.name.charAt(0)}${lead.name.split(' ')[1]?.charAt(0) || ''}`.toUpperCase();
   const stage = pipelineStages.find(s => s.value === lead.status);
 
@@ -94,7 +95,20 @@ function LeadCard({ lead }: { lead: Lead }) {
   };
 
   return (
-    <Card className="hover:shadow-md transition-shadow">
+    <Card
+      draggable={draggable}
+      onDragStart={(e) => {
+        e.dataTransfer.setData('text/plain', lead.id);
+        e.dataTransfer.effectAllowed = 'move';
+        setIsDragging(true);
+      }}
+      onDragEnd={() => setIsDragging(false)}
+      className={cn(
+        "hover:shadow-md transition-[transform,opacity,box-shadow] duration-150 ease-out",
+        draggable && "cursor-grab active:cursor-grabbing",
+        isDragging && "opacity-50 scale-[0.98]"
+      )}
+    >
       <CardContent className="p-4">
         <div className="flex items-start gap-4">
           <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-lg flex-shrink-0">
@@ -173,7 +187,7 @@ function LeadCard({ lead }: { lead: Lead }) {
                 className="flex-1 text-purple-600 border-purple-200 hover:bg-purple-50"
                 asChild
               >
-                <Link to={`/calendar?lead=${lead.id}`}>
+                <Link to={`/calendario?lead=${lead.id}`}>
                   <Calendar className="w-4 h-4 mr-1" />
                   Agendar
                 </Link>
@@ -203,13 +217,14 @@ function LeadCard({ lead }: { lead: Lead }) {
 }
 
 // Pipeline view (Kanban)
-function PipelineView({ leads }: { leads: Lead[] }) {
+function PipelineView({ leads, onMoveStage }: { leads: Lead[]; onMoveStage: (id: string, stage: LeadStatus) => void }) {
   const activeStages = pipelineStages.filter(s => !['cerrado_ganado', 'cerrado_perdido', 'descartado'].includes(s.value));
   const closedStages = pipelineStages.filter(s => ['cerrado_ganado', 'cerrado_perdido', 'descartado'].includes(s.value));
 
   const StageColumn = ({ stage }: { stage: typeof pipelineStages[0] }) => {
     const stageLeads = leads.filter(l => l.status === stage.value);
-    
+    const [isOver, setIsOver] = useState(false);
+
     return (
       <div className="flex-shrink-0 w-72">
         <div className={cn("p-3 rounded-t-lg text-white font-medium flex items-center justify-between", stage.color)}>
@@ -218,9 +233,26 @@ function PipelineView({ leads }: { leads: Lead[] }) {
             {stageLeads.length}
           </Badge>
         </div>
-        <div className="bg-muted/50 rounded-b-lg p-3 space-y-3 min-h-[200px]">
+        <div
+          onDragOver={(e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            if (!isOver) setIsOver(true);
+          }}
+          onDragLeave={() => setIsOver(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setIsOver(false);
+            const leadId = e.dataTransfer.getData('text/plain');
+            if (leadId) onMoveStage(leadId, stage.value);
+          }}
+          className={cn(
+            "rounded-b-lg p-3 space-y-3 min-h-[200px] border-2 border-transparent transition-colors duration-150 ease-out",
+            isOver ? "bg-primary/5 border-dashed border-primary/40" : "bg-muted/50"
+          )}
+        >
           {stageLeads.map(lead => (
-            <LeadCard key={lead.id} lead={lead} />
+            <LeadCard key={lead.id} lead={lead} draggable />
           ))}
         </div>
       </div>
@@ -255,7 +287,7 @@ function PipelineView({ leads }: { leads: Lead[] }) {
 // Main component
 export function LeadList() {
   const { user } = useAuth();
-  const { leads, loading } = useLeads(user?.id);
+  const { leads, loading, moveToStage } = useLeads(user?.id);
   const [viewMode, setViewMode] = useState<'list' | 'pipeline'>('pipeline');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -418,7 +450,7 @@ export function LeadList() {
           </Button>
         </div>
       ) : viewMode === 'pipeline' ? (
-        <PipelineView leads={filteredLeads} />
+        <PipelineView leads={filteredLeads} onMoveStage={moveToStage} />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredLeads.map((lead) => (
