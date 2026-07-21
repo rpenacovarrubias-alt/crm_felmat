@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
-import { EstimacionFormData, TipoPropiedad, EstadoConservacion, TipoAcabados } from '@/types/estimacion';
+import type { EstimacionFormData, TipoPropiedad, EstadoConservacion, TipoAcabados } from '@/types/estimacion';
 import { OPCIONES_TIPO_PROPIEDAD, OPCIONES_ESTADO_CONSERVACION, OPCIONES_TIPO_ACABADOS } from '@/lib/valuacion/factores';
 import { MapPin, Ruler, Home, DollarSign, Camera, FileText } from 'lucide-react';
 

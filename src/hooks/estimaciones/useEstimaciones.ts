@@ -3,13 +3,13 @@
 // ==========================================
 
 import { useState, useCallback, useEffect } from 'react';
-import { 
-  EstimacionValuacion, 
-  EstimacionFormData, 
-  Comparable, 
+import type {
+  EstimacionValuacion,
+  EstimacionFormData,
+  Comparable,
   ResultadoEstimacion,
   FotoEstimacion,
-  TipoPropiedad 
+  TipoPropiedad
 } from '@/types/estimacion';
 import { realizarValuacion } from '@/lib/valuacion/calculadora';
 import { useToast } from '@/hooks/use-toast';

@@ -2,13 +2,13 @@
 // MOTOR DE CÁLCULO DE VALUACIÓN
 // ==========================================
 
-import { 
-  EstimacionValuacion, 
-  Comparable, 
-  ResultadoEstimacion, 
+import type {
+  EstimacionValuacion,
+  Comparable,
+  ResultadoEstimacion,
   FactorAjuste,
   AjusteComparable,
-  TipoPropiedad 
+  TipoPropiedad
 } from '@/types/estimacion';
 import { 
   DEPRECIACION_ANUAL, 

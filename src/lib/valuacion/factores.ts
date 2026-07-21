@@ -3,7 +3,7 @@
 // Basado en metodología INDAABIN y SHF
 // ==========================================
 
-import { EstadoConservacion, TipoAcabados, TipoPropiedad } from '@/types/estimacion';
+import type { EstadoConservacion, TipoAcabados, TipoPropiedad } from '@/types/estimacion';
 
 // Depreciación por antigüedad (anual)
 export const DEPRECIACION_ANUAL = 0.015; // 1.5% anual
