@@ -14,6 +14,7 @@ const Dashboard = lazy(() => import('@/components/dashboard/Dashboard'));
 const PropertyList = lazy(() => import('@/components/properties/PropertyList'));
 const PropertyForm = lazy(() => import('@/components/properties/PropertyForm'));
 const PropertyDetail = lazy(() => import('@/components/properties/PropertyDetail'));
+const EstimacionesPage = lazy(() => import('@/components/estimaciones/EstimacionesPage'));
 const LeadList = lazy(() => import('@/components/leads/LeadList'));
 const LeadForm = lazy(() => import('@/components/leads/LeadForm'));
 const Calendar = lazy(() => import('@/pages/Calendar'));
@@ -66,7 +67,7 @@ function AppRoutes() {
             <Route path="/propiedades/desempeno" element={<ModulePlaceholder title="Desempeño de Propiedades" />} />
             <Route path="/propiedades/:id" element={<PropertyDetail />} />
             <Route path="/propiedades/:id/edit" element={<PropertyForm />} />
-            <Route path="/estimaciones" element={<ModulePlaceholder title="Estimaciones" />} />
+            <Route path="/estimaciones" element={<EstimacionesPage />} />
             <Route path="/vinculaciones" element={<ModulePlaceholder title="Vinculaciones" />} />
             <Route path="/listas-compartidas" element={<ModulePlaceholder title="Listas Compartidas" />} />
             
