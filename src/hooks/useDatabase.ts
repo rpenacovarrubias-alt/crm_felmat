@@ -3,13 +3,13 @@
 // ============================================
 
 import { useState, useEffect, useCallback } from 'react';
-import type { 
-  User, Property, Lead, LeadStatus, Activity, AgentWebsite, Notification, DashboardStats 
+import type {
+  User, Property, Lead, LeadStatus, Activity, AgentWebsite, Notification, DashboardStats, PropertyList
 } from '@/types';
 
 // Nombre de la base de datos y versión
 const DB_NAME = 'PropTechCRM';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 // Stores (tablas)
 const STORES = {
@@ -22,6 +22,7 @@ const STORES = {
   sharedProperties: 'sharedProperties',
   agentWebsites: 'agentWebsites',
   notifications: 'notifications',
+  propertyLists: 'propertyLists',
 } as const;
 
 // Clase para manejar IndexedDB
@@ -64,6 +65,13 @@ class DatabaseManager {
           const activityStore = db.createObjectStore(STORES.activities, { keyPath: 'id' });
           activityStore.createIndex('assignedTo', 'assignedTo', { unique: false });
           activityStore.createIndex('leadId', 'leadId', { unique: false });
+          activityStore.createIndex('propertyId', 'propertyId', { unique: false });
+        } else {
+          // Migración: agrega el índice propertyId a bases ya creadas en v1
+          const activityStore = (event.target as IDBOpenDBRequest).transaction!.objectStore(STORES.activities);
+          if (!activityStore.indexNames.contains('propertyId')) {
+            activityStore.createIndex('propertyId', 'propertyId', { unique: false });
+          }
         }
         if (!db.objectStoreNames.contains(STORES.pipelines)) {
           db.createObjectStore(STORES.pipelines, { keyPath: 'id' });
@@ -77,6 +85,11 @@ class DatabaseManager {
         if (!db.objectStoreNames.contains(STORES.notifications)) {
           const notifStore = db.createObjectStore(STORES.notifications, { keyPath: 'id' });
           notifStore.createIndex('userId', 'userId', { unique: false });
+        }
+        if (!db.objectStoreNames.contains(STORES.propertyLists)) {
+          const listStore = db.createObjectStore(STORES.propertyLists, { keyPath: 'id' });
+          listStore.createIndex('agentId', 'agentId', { unique: false });
+          listStore.createIndex('slug', 'slug', { unique: true });
         }
       };
     });
@@ -585,6 +598,96 @@ export function useAgentWebsite(agentId?: string) {
   };
 
   return { website, loading, create, update, refresh };
+}
+
+// Genera un slug único para una lista pública
+function generateListSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '')
+    + '-' + Date.now().toString(36);
+}
+
+// Hook para Listas Públicas de propiedades
+export function usePropertyLists(agentId?: string) {
+  const [lists, setLists] = useState<PropertyList[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const refresh = useCallback(async () => {
+    let data: PropertyList[];
+    if (agentId) {
+      data = await dbManager.getByIndex<PropertyList>(STORES.propertyLists, 'agentId', agentId);
+    } else {
+      data = await dbManager.getAll<PropertyList>(STORES.propertyLists);
+    }
+    data.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+    setLists(data);
+    setLoading(false);
+  }, [agentId]);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
+  const create = async (name: string, ownerId: string): Promise<PropertyList> => {
+    const newList: PropertyList = {
+      id: crypto.randomUUID(),
+      name,
+      agentId: ownerId,
+      propertyIds: [],
+      slug: generateListSlug(name),
+      views: 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    await dbManager.put(STORES.propertyLists, newList);
+    await refresh();
+    return newList;
+  };
+
+  const update = async (id: string, updates: Partial<PropertyList>): Promise<void> => {
+    const existing = await dbManager.get<PropertyList>(STORES.propertyLists, id);
+    if (!existing) throw new Error('List not found');
+    const updated = { ...existing, ...updates, updatedAt: new Date().toISOString() };
+    await dbManager.put(STORES.propertyLists, updated);
+    await refresh();
+  };
+
+  const remove = async (id: string): Promise<void> => {
+    await dbManager.delete(STORES.propertyLists, id);
+    await refresh();
+  };
+
+  const addProperty = async (id: string, propertyId: string): Promise<void> => {
+    const existing = await dbManager.get<PropertyList>(STORES.propertyLists, id);
+    if (!existing) throw new Error('List not found');
+    if (existing.propertyIds.includes(propertyId)) return;
+    await update(id, { propertyIds: [...existing.propertyIds, propertyId] });
+  };
+
+  const removeProperty = async (id: string, propertyId: string): Promise<void> => {
+    const existing = await dbManager.get<PropertyList>(STORES.propertyLists, id);
+    if (!existing) throw new Error('List not found');
+    await update(id, { propertyIds: existing.propertyIds.filter(pid => pid !== propertyId) });
+  };
+
+  const getBySlug = async (slug: string): Promise<PropertyList | null> => {
+    const all = await dbManager.getAll<PropertyList>(STORES.propertyLists);
+    return all.find(l => l.slug === slug) || null;
+  };
+
+  const incrementViews = async (id: string): Promise<void> => {
+    const existing = await dbManager.get<PropertyList>(STORES.propertyLists, id);
+    if (existing) {
+      existing.views += 1;
+      await dbManager.put(STORES.propertyLists, existing);
+    }
+  };
+
+  return { lists, loading, create, update, remove, addProperty, removeProperty, getBySlug, incrementViews, refresh };
 }
 
 export default dbManager;

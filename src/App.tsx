@@ -15,6 +15,9 @@ const PropertyList = lazy(() => import('@/components/properties/PropertyList'));
 const PropertyForm = lazy(() => import('@/components/properties/PropertyForm'));
 const PropertyDetail = lazy(() => import('@/components/properties/PropertyDetail'));
 const EstimacionesPage = lazy(() => import('@/components/estimaciones/EstimacionesPage'));
+const PropertyPerformance = lazy(() => import('@/components/properties/PropertyPerformance'));
+const SharedLists = lazy(() => import('@/components/lists/SharedLists'));
+const PublicList = lazy(() => import('@/components/lists/PublicList'));
 const LeadList = lazy(() => import('@/components/leads/LeadList'));
 const LeadForm = lazy(() => import('@/components/leads/LeadForm'));
 const Calendar = lazy(() => import('@/pages/Calendar'));
@@ -51,6 +54,7 @@ function AppRoutes() {
       <Routes>
         {/* Public routes */}
         <Route path="/login" element={<Login />} />
+        <Route path="/lista/:slug" element={<PublicList />} />
         
         {/* Protected routes */}
         <Route element={<ProtectedRoute />}>
@@ -64,12 +68,12 @@ function AppRoutes() {
             <Route path="/propiedades/nueva" element={<PropertyForm />} />
             <Route path="/propiedades/tipos" element={<ModulePlaceholder title="Tipos de Propiedades" />} />
             <Route path="/propiedades/amenidades" element={<ModulePlaceholder title="Amenidades" />} />
-            <Route path="/propiedades/desempeno" element={<ModulePlaceholder title="Desempeño de Propiedades" />} />
+            <Route path="/propiedades/desempeno" element={<PropertyPerformance />} />
             <Route path="/propiedades/:id" element={<PropertyDetail />} />
             <Route path="/propiedades/:id/edit" element={<PropertyForm />} />
             <Route path="/estimaciones" element={<EstimacionesPage />} />
             <Route path="/vinculaciones" element={<ModulePlaceholder title="Vinculaciones" />} />
-            <Route path="/listas-compartidas" element={<ModulePlaceholder title="Listas Compartidas" />} />
+            <Route path="/listas-compartidas" element={<SharedLists />} />
             
             {/* Leads */}
             <Route path="/leads" element={<LeadList />} />

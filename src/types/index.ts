@@ -315,6 +315,18 @@ export interface SharedProperty {
   expiresAt?: string;
 }
 
+// Lista pública de propiedades (para compartir con clientes)
+export interface PropertyList {
+  id: string;
+  name: string;
+  agentId: string;
+  propertyIds: string[];
+  slug: string;
+  views: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // Estadísticas
 export interface DashboardStats {
   // Propiedades
