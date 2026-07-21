@@ -87,7 +87,7 @@ export function Header({ sidebarCollapsed }: HeaderProps) {
             <DropdownMenuLabel>Crear nuevo</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link to="/properties/new" className="flex items-center gap-2 cursor-pointer">
+              <Link to="/propiedades/nueva" className="flex items-center gap-2 cursor-pointer">
                 <Building2 className="w-4 h-4" />
                 Propiedad
               </Link>

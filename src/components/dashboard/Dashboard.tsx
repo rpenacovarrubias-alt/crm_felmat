@@ -169,7 +169,7 @@ function FeaturedProperties() {
           <Building2 className="w-5 h-5" />
           Propiedades Destacadas
         </CardTitle>
-        <Link to="/properties">
+        <Link to="/propiedades">
           <Button variant="ghost" size="sm">Ver todas</Button>
         </Link>
       </CardHeader>
@@ -178,7 +178,7 @@ function FeaturedProperties() {
           <div className="text-center py-8">
             <Building2 className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
             <p className="text-muted-foreground mb-4">No hay propiedades destacadas</p>
-            <Link to="/properties/new">
+            <Link to="/propiedades/nueva">
               <Button>
                 <Plus className="w-4 h-4 mr-2" />
                 Agregar propiedad
@@ -188,9 +188,9 @@ function FeaturedProperties() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {featuredProperties.map((property) => (
-              <Link 
-                key={property.id} 
-                to={`/properties/${property.id}`}
+              <Link
+                key={property.id}
+                to={`/propiedades/${property.id}`}
                 className="group block"
               >
                 <div className="relative aspect-video rounded-lg overflow-hidden bg-muted">
@@ -361,7 +361,7 @@ export function Dashboard() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Link to="/properties/new">
+          <Link to="/propiedades/nueva">
             <Button>
               <Plus className="w-4 h-4 mr-2" />
               Nueva Propiedad
@@ -383,7 +383,7 @@ export function Dashboard() {
           value={totalProperties}
           description={`${publishedProperties} publicadas`}
           icon={Building2}
-          href="/properties"
+          href="/propiedades"
           color="blue"
         />
         <StatCard

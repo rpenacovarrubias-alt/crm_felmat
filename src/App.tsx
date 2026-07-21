@@ -11,7 +11,9 @@ import { useDatabaseInit } from '@/hooks/useDatabase';
 // Lazy loading de páginas
 const Login = lazy(() => import('@/pages/Login'));
 const Dashboard = lazy(() => import('@/pages/Dashboard'));
-const Properties = lazy(() => import('@/pages/Properties'));
+const PropertyList = lazy(() => import('@/components/properties/PropertyList'));
+const PropertyForm = lazy(() => import('@/components/properties/PropertyForm'));
+const PropertyDetail = lazy(() => import('@/components/properties/PropertyDetail'));
 const LeadList = lazy(() => import('@/components/leads/LeadList'));
 const LeadForm = lazy(() => import('@/components/leads/LeadForm'));
 const Calendar = lazy(() => import('@/pages/Calendar'));
@@ -57,11 +59,13 @@ function AppRoutes() {
             <Route path="/dashboard" element={<Dashboard />} />
             
             {/* Properties */}
-            <Route path="/propiedades" element={<Properties />} />
-            <Route path="/propiedades/nueva" element={<ModulePlaceholder title="Nueva Propiedad" />} />
+            <Route path="/propiedades" element={<PropertyList />} />
+            <Route path="/propiedades/nueva" element={<PropertyForm />} />
             <Route path="/propiedades/tipos" element={<ModulePlaceholder title="Tipos de Propiedades" />} />
             <Route path="/propiedades/amenidades" element={<ModulePlaceholder title="Amenidades" />} />
             <Route path="/propiedades/desempeno" element={<ModulePlaceholder title="Desempeño de Propiedades" />} />
+            <Route path="/propiedades/:id" element={<PropertyDetail />} />
+            <Route path="/propiedades/:id/edit" element={<PropertyForm />} />
             <Route path="/estimaciones" element={<ModulePlaceholder title="Estimaciones" />} />
             <Route path="/vinculaciones" element={<ModulePlaceholder title="Vinculaciones" />} />
             <Route path="/listas-compartidas" element={<ModulePlaceholder title="Listas Compartidas" />} />

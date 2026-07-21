@@ -333,7 +333,7 @@ export function PropertyForm() {
         await create(propertyData);
       }
 
-      navigate('/properties');
+      navigate('/propiedades');
     } catch (error) {
       console.error('Error saving property:', error);
       alert('Error al guardar la propiedad. Intenta de nuevo.');
@@ -346,7 +346,7 @@ export function PropertyForm() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Button variant="outline" size="icon" onClick={() => navigate('/properties')}>
+        <Button variant="outline" size="icon" onClick={() => navigate('/propiedades')}>
           <ArrowLeft className="w-4 h-4" />
         </Button>
         <div>
@@ -783,7 +783,7 @@ export function PropertyForm() {
           <Button 
             type="button" 
             variant="outline" 
-            onClick={() => navigate('/properties')}
+            onClick={() => navigate('/propiedades')}
           >
             Cancelar
           </Button>

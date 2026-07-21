@@ -1303,7 +1303,7 @@ export function PropertyDetail() {
         <h2 className="text-xl font-semibold mb-2">Propiedad no encontrada</h2>
         <p className="text-muted-foreground mb-4">La propiedad que buscas no existe o fue eliminada</p>
         <Button asChild>
-          <Link to="/properties">Ver todas las propiedades</Link>
+          <Link to="/propiedades">Ver todas las propiedades</Link>
         </Button>
       </div>
     );
@@ -1312,7 +1312,7 @@ export function PropertyDetail() {
   const handleDelete = async () => {
     if (confirm('¿Estás seguro de que deseas eliminar esta propiedad?')) {
       await remove(property.id);
-      navigate('/properties');
+      navigate('/propiedades');
     }
   };
 
@@ -1353,7 +1353,7 @@ export function PropertyDetail() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-4">
-          <Button variant="outline" size="icon" onClick={() => navigate('/properties')}>
+          <Button variant="outline" size="icon" onClick={() => navigate('/propiedades')}>
             <ArrowLeft className="w-4 h-4" />
           </Button>
           <div>
@@ -1382,7 +1382,7 @@ export function PropertyDetail() {
             QR
           </Button>
           <Button variant="outline" asChild>
-            <Link to={`/properties/${property.id}/edit`}>
+            <Link to={`/propiedades/${property.id}/edit`}>
               <Edit className="w-4 h-4 mr-2" />
               Editar
             </Link>

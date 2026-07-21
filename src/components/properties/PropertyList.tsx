@@ -133,14 +133,14 @@ function PropertyCard({ property, viewMode, onShare, onDelete, canEdit, canDelet
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem asChild>
-                        <Link to={`/properties/${property.id}`}>
+                        <Link to={`/propiedades/${property.id}`}>
                           <Eye className="w-4 h-4 mr-2" />
                           Ver detalle
                         </Link>
                       </DropdownMenuItem>
                       {canEdit && (
                         <DropdownMenuItem asChild>
-                          <Link to={`/properties/${property.id}/edit`}>
+                          <Link to={`/propiedades/${property.id}/edit`}>
                             <Edit className="w-4 h-4 mr-2" />
                             Editar
                           </Link>
@@ -227,14 +227,14 @@ function PropertyCard({ property, viewMode, onShare, onDelete, canEdit, canDelet
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem asChild>
-                <Link to={`/properties/${property.id}`}>
+                <Link to={`/propiedades/${property.id}`}>
                   <Eye className="w-4 h-4 mr-2" />
                   Ver detalle
                 </Link>
               </DropdownMenuItem>
               {canEdit && (
                 <DropdownMenuItem asChild>
-                  <Link to={`/properties/${property.id}/edit`}>
+                  <Link to={`/propiedades/${property.id}/edit`}>
                     <Edit className="w-4 h-4 mr-2" />
                     Editar
                   </Link>
@@ -405,7 +405,7 @@ export function PropertyList() {
           </p>
         </div>
         <Button asChild>
-          <Link to="/properties/new">
+          <Link to="/propiedades/nueva">
             <Plus className="w-4 h-4 mr-2" />
             Nueva Propiedad
           </Link>
@@ -486,7 +486,7 @@ export function PropertyList() {
               : 'Comienza agregando tu primera propiedad'}
           </p>
           <Button asChild>
-            <Link to="/properties/new">
+            <Link to="/propiedades/nueva">
               <Plus className="w-4 h-4 mr-2" />
               Nueva Propiedad
             </Link>

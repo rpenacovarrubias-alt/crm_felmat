@@ -66,7 +66,7 @@ const sampleNotifications: Notification[] = [
     message: 'Tu propiedad "Departamento Santa Fe" ha alcanzado 100 vistas',
     read: true,
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1 día atrás
-    link: '/properties',
+    link: '/propiedades',
     metadata: { propertyId: 'prop-1' },
   },
   {
