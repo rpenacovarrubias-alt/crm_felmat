@@ -7,7 +7,8 @@ import { Calendar, dateFnsLocalizer, type View, type NavigateAction } from 'reac
 import { format, parse, startOfWeek, getDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useAuth } from '@/hooks/useAuth';
-import { useProperties, useLeads } from '@/hooks/useDatabase';
+import { useProperties, useLeads, useActivities } from '@/hooks/useDatabase';
+import type { ActivityStatus } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -43,7 +44,7 @@ const localizer = dateFnsLocalizer({
   locales,
 });
 
-// Tipos
+// Vista de una visita agendada, derivada de una Activity tipo 'visita'
 interface Visit {
   id: string;
   title: string;
@@ -52,42 +53,14 @@ interface Visit {
   propertyId: string;
   leadId: string;
   agentId: string;
-  status: 'programada' | 'completada' | 'cancelada' | 'no_show';
+  status: ActivityStatus;
   notes?: string;
   propertyTitle: string;
   leadName: string;
   leadPhone: string;
 }
 
-// Eventos de ejemplo
-const sampleVisits: Visit[] = [
-  {
-    id: '1',
-    title: 'Visita - Casa en Polanco',
-    start: new Date(new Date().setHours(10, 0, 0, 0)),
-    end: new Date(new Date().setHours(11, 0, 0, 0)),
-    propertyId: 'prop-1',
-    leadId: 'lead-1',
-    agentId: 'agent-1',
-    status: 'programada',
-    propertyTitle: 'Casa en Polanco',
-    leadName: 'Juan Pérez',
-    leadPhone: '+52 55 1234 5678',
-  },
-  {
-    id: '2',
-    title: 'Visita - Departamento Santa Fe',
-    start: new Date(new Date().setDate(new Date().getDate() + 1)),
-    end: new Date(new Date().setDate(new Date().getDate() + 1)),
-    propertyId: 'prop-2',
-    leadId: 'lead-2',
-    agentId: 'agent-1',
-    status: 'programada',
-    propertyTitle: 'Departamento Santa Fe',
-    leadName: 'María García',
-    leadPhone: '+52 55 8765 4321',
-  },
-];
+const DURACION_DEFAULT_MIN = 60;
 
 const messages = {
   today: 'Hoy',
@@ -108,7 +81,7 @@ export function VisitCalendar() {
   const { user, isAdmin } = useAuth();
   const { properties } = useProperties();
   const { leads } = useLeads();
-  const [visits, setVisits] = useState<Visit[]>(sampleVisits);
+  const { activities, create: createActivity, update: updateActivity } = useActivities(isAdmin ? undefined : user?.id);
   const [view, setView] = useState<View>('month');
   const [date, setDate] = useState(new Date());
   const [selectedVisit, setSelectedVisit] = useState<Visit | null>(null);
@@ -126,43 +99,57 @@ export function VisitCalendar() {
   });
 
   // Filtrar propiedades y leads según permisos
-  const filteredProperties = isAdmin 
-    ? properties 
+  const filteredProperties = isAdmin
+    ? properties
     : properties.filter(p => p.agentId === user?.id);
 
-  const filteredLeads = isAdmin 
-    ? leads 
+  const filteredLeads = isAdmin
+    ? leads
     : leads.filter(l => l.assignedTo === user?.id);
 
-  // Filtrar visitas según permisos
-  const filteredVisits = isAdmin 
-    ? visits 
-    : visits.filter(v => v.agentId === user?.id);
-
+  // Visitas = actividades tipo 'visita', con propiedad y lead resueltos para mostrar
   const events = useMemo(() => {
-    return filteredVisits.map(visit => ({
-      ...visit,
-      start: new Date(visit.start),
-      end: new Date(visit.end),
-    }));
-  }, [filteredVisits]);
+    return activities
+      .filter(a => a.type === 'visita' && a.dueDate)
+      .map(a => {
+        const property = properties.find(p => p.id === a.propertyId);
+        const lead = leads.find(l => l.id === a.leadId);
+        const start = new Date(a.dueDate!);
+        const end = new Date(start.getTime() + DURACION_DEFAULT_MIN * 60000);
+        const visit: Visit = {
+          id: a.id,
+          title: a.title,
+          start,
+          end,
+          propertyId: a.propertyId || '',
+          leadId: a.leadId || '',
+          agentId: a.assignedTo,
+          status: a.status,
+          notes: a.description,
+          propertyTitle: property?.title || 'Propiedad eliminada',
+          leadName: lead?.name || 'Cliente eliminado',
+          leadPhone: lead?.phone || '',
+        };
+        return visit;
+      });
+  }, [activities, properties, leads]);
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: ActivityStatus) => {
     switch (status) {
-      case 'programada': return 'bg-blue-500';
+      case 'pendiente': return 'bg-blue-500';
+      case 'en_progreso': return 'bg-orange-500';
       case 'completada': return 'bg-green-500';
       case 'cancelada': return 'bg-red-500';
-      case 'no_show': return 'bg-orange-500';
       default: return 'bg-gray-500';
     }
   };
 
-  const getStatusIcon = (status: string) => {
+  const getStatusIcon = (status: ActivityStatus) => {
     switch (status) {
-      case 'programada': return <Clock className="w-4 h-4" />;
+      case 'pendiente': return <Clock className="w-4 h-4" />;
+      case 'en_progreso': return <AlertCircle className="w-4 h-4" />;
       case 'completada': return <CheckCircle2 className="w-4 h-4" />;
       case 'cancelada': return <XCircle className="w-4 h-4" />;
-      case 'no_show': return <AlertCircle className="w-4 h-4" />;
       default: return <Clock className="w-4 h-4" />;
     }
   };
@@ -180,31 +167,26 @@ export function VisitCalendar() {
     setIsNewVisitDialogOpen(true);
   };
 
-  const handleCreateVisit = () => {
+  const handleCreateVisit = async () => {
     const property = filteredProperties.find(p => p.id === newVisit.propertyId);
     const lead = filteredLeads.find(l => l.id === newVisit.leadId);
-    
-    if (!property || !lead) return;
+
+    if (!property || !lead || !user) return;
 
     const startDate = new Date(`${newVisit.date}T${newVisit.time}`);
-    const endDate = new Date(startDate.getTime() + parseInt(newVisit.duration) * 60000);
 
-    const visit: Visit = {
-      id: crypto.randomUUID(),
+    await createActivity({
+      type: 'visita',
       title: `Visita - ${property.title}`,
-      start: startDate,
-      end: endDate,
-      propertyId: property.id,
+      description: newVisit.notes || undefined,
+      status: 'pendiente',
       leadId: lead.id,
-      agentId: user?.id || '',
-      status: 'programada',
-      notes: newVisit.notes,
-      propertyTitle: property.title,
-      leadName: lead.name,
-      leadPhone: lead.phone,
-    };
+      propertyId: property.id,
+      assignedTo: user.id,
+      createdBy: user.id,
+      dueDate: startDate.toISOString(),
+    });
 
-    setVisits(prev => [...prev, visit]);
     setIsNewVisitDialogOpen(false);
     setNewVisit({
       propertyId: '',
@@ -216,10 +198,11 @@ export function VisitCalendar() {
     });
   };
 
-  const handleUpdateStatus = (visitId: string, status: Visit['status']) => {
-    setVisits(prev => prev.map(v => 
-      v.id === visitId ? { ...v, status } : v
-    ));
+  const handleUpdateStatus = async (visitId: string, status: ActivityStatus) => {
+    await updateActivity(visitId, {
+      status,
+      completedAt: status === 'completada' ? new Date().toISOString() : undefined,
+    });
     setIsDialogOpen(false);
   };
 
@@ -306,7 +289,7 @@ export function VisitCalendar() {
               </div>
               <div>
                 <p className="text-2xl font-bold">
-                  {filteredVisits.filter(v => v.status === 'programada').length}
+                  {events.filter(v => v.status === 'pendiente').length}
                 </p>
                 <p className="text-xs text-muted-foreground">Programadas</p>
               </div>
@@ -321,7 +304,7 @@ export function VisitCalendar() {
               </div>
               <div>
                 <p className="text-2xl font-bold">
-                  {filteredVisits.filter(v => v.status === 'completada').length}
+                  {events.filter(v => v.status === 'completada').length}
                 </p>
                 <p className="text-xs text-muted-foreground">Completadas</p>
               </div>
@@ -336,7 +319,7 @@ export function VisitCalendar() {
               </div>
               <div>
                 <p className="text-2xl font-bold">
-                  {filteredVisits.filter(v => v.status === 'cancelada').length}
+                  {events.filter(v => v.status === 'cancelada').length}
                 </p>
                 <p className="text-xs text-muted-foreground">Canceladas</p>
               </div>
@@ -350,7 +333,7 @@ export function VisitCalendar() {
                 <CalendarIcon className="w-4 h-4 text-purple-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{filteredVisits.length}</p>
+                <p className="text-2xl font-bold">{events.length}</p>
                 <p className="text-xs text-muted-foreground">Total</p>
               </div>
             </div>
@@ -456,7 +439,7 @@ export function VisitCalendar() {
                 )}
               </div>
 
-              {selectedVisit.status === 'programada' && (
+              {(selectedVisit.status === 'pendiente' || selectedVisit.status === 'en_progreso') && (
                 <div className="flex gap-2 pt-4">
                   <Button 
                     variant="default" 

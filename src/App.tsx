@@ -20,13 +20,13 @@ const SharedLists = lazy(() => import('@/components/lists/SharedLists'));
 const PublicList = lazy(() => import('@/components/lists/PublicList'));
 const LeadList = lazy(() => import('@/components/leads/LeadList'));
 const LeadForm = lazy(() => import('@/components/leads/LeadForm'));
-const Calendar = lazy(() => import('@/pages/Calendar'));
+const Calendar = lazy(() => import('@/components/calendar/VisitCalendar'));
 const Website = lazy(() => import('@/components/website/WebsiteBuilder'));
-const Activities = lazy(() => import('@/pages/Activities'));
-const Notifications = lazy(() => import('@/pages/Notifications'));
+const Activities = lazy(() => import('@/components/activities/ActivitiesList'));
+const Notifications = lazy(() => import('@/components/notifications/NotificationCenter'));
 const Settings = lazy(() => import('@/pages/Settings'));
-const Profile = lazy(() => import('@/pages/Profile'));
-const Users = lazy(() => import('@/pages/Users'));
+const Profile = lazy(() => import('@/components/profile/ProfilePage'));
+const Users = lazy(() => import('@/components/users/UserManagement'));
 const Anuncios = lazy(() => import('@/components/anuncios/Anuncios'));
 
 // Placeholder simple para módulos en desarrollo

@@ -5,6 +5,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useNotifications } from '@/hooks/useDatabase';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -22,95 +23,41 @@ import {
   X,
 } from 'lucide-react';
 
-interface Notification {
-  id: string;
-  type: 'lead' | 'property' | 'visit' | 'system';
-  title: string;
-  message: string;
-  read: boolean;
-  createdAt: string;
-  link?: string;
-  metadata?: {
-    leadId?: string;
-    propertyId?: string;
-    visitId?: string;
-  };
+// Categoría derivada de relatedTo, para las pestañas de filtro
+type NotifCategory = 'lead' | 'property' | 'visit' | 'system';
+
+function getCategory(relatedTo?: { type: 'lead' | 'property' | 'activity'; id: string }): NotifCategory {
+  if (!relatedTo) return 'system';
+  if (relatedTo.type === 'activity') return 'visit';
+  return relatedTo.type;
 }
 
-// Notificaciones de ejemplo
-const sampleNotifications: Notification[] = [
-  {
-    id: '1',
-    type: 'lead',
-    title: 'Nuevo lead recibido',
-    message: 'Juan Pérez se ha registrado como interesado en Casa en Polanco',
-    read: false,
-    createdAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(), // 30 minutos atrás
-    link: '/leads',
-    metadata: { leadId: 'lead-1' },
-  },
-  {
-    id: '2',
-    type: 'visit',
-    title: 'Visita programada para mañana',
-    message: 'Tienes una visita programada a las 10:00 AM con María García',
-    read: false,
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 horas atrás
-    link: '/calendar',
-    metadata: { visitId: 'visit-1' },
-  },
-  {
-    id: '3',
-    type: 'property',
-    title: 'Propiedad destacada',
-    message: 'Tu propiedad "Departamento Santa Fe" ha alcanzado 100 vistas',
-    read: true,
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1 día atrás
-    link: '/propiedades',
-    metadata: { propertyId: 'prop-1' },
-  },
-  {
-    id: '4',
-    type: 'system',
-    title: 'Bienvenido al CRM',
-    message: 'Gracias por usar Grupo FELMAT CRM. Explora todas las funcionalidades.',
-    read: true,
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(), // 2 días atrás
-  },
-];
+function getLink(relatedTo?: { type: 'lead' | 'property' | 'activity'; id: string }): string | undefined {
+  if (!relatedTo) return undefined;
+  if (relatedTo.type === 'lead') return `/leads/${relatedTo.id}`;
+  if (relatedTo.type === 'property') return `/propiedades/${relatedTo.id}`;
+  return '/actividades';
+}
 
 export function NotificationCenter() {
-  const { isAdmin } = useAuth();
-  const [notifications, setNotifications] = useState<Notification[]>(sampleNotifications);
+  const { user, isAdmin } = useAuth();
+  const { notifications, markAsRead, markAllAsRead, remove } = useNotifications(user?.id);
   const [activeTab, setActiveTab] = useState('all');
 
-  // Filtrar notificaciones según permisos (en una app real, esto vendría del backend)
-  const filteredNotifications = isAdmin 
-    ? notifications 
-    : notifications.filter(n => n.type !== 'system');
+  // Filtrar notificaciones según permisos
+  const filteredNotifications = isAdmin
+    ? notifications
+    : notifications.filter(n => getCategory(n.relatedTo) !== 'system');
 
-  const unreadCount = filteredNotifications.filter(n => !n.read).length;
+  const unreadCount = filteredNotifications.filter(n => !n.isRead).length;
 
-  const markAsRead = (id: string) => {
-    setNotifications(prev => prev.map(n => 
-      n.id === id ? { ...n, read: true } : n
-    ));
+  const clearAll = async () => {
+    if (!confirm('¿Eliminar todas las notificaciones?')) return;
+    await Promise.all(filteredNotifications.map(n => remove(n.id)));
   };
 
-  const markAllAsRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-  };
-
-  const deleteNotification = (id: string) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
-  };
-
-  const clearAll = () => {
-    setNotifications([]);
-  };
-
-  const getNotificationIcon = (type: string) => {
-    switch (type) {
+  const getNotificationIcon = (category: NotifCategory) => {
+    switch (category) {
       case 'lead':
         return <User className="w-5 h-5 text-blue-500" />;
       case 'property':
@@ -141,11 +88,11 @@ export function NotificationCenter() {
     return notificationDate.toLocaleDateString('es-MX');
   };
 
-  const displayedNotifications = activeTab === 'all' 
-    ? filteredNotifications 
-    : activeTab === 'unread' 
-      ? filteredNotifications.filter(n => !n.read)
-      : filteredNotifications.filter(n => n.type === activeTab);
+  const displayedNotifications = activeTab === 'all'
+    ? filteredNotifications
+    : activeTab === 'unread'
+      ? filteredNotifications.filter(n => !n.isRead)
+      : filteredNotifications.filter(n => getCategory(n.relatedTo) === activeTab);
 
   return (
     <div className="space-y-6">
@@ -191,7 +138,7 @@ export function NotificationCenter() {
               </div>
               <div>
                 <p className="text-2xl font-bold">
-                  {filteredNotifications.filter(n => n.type === 'lead' && !n.read).length}
+                  {filteredNotifications.filter(n => getCategory(n.relatedTo) === 'lead' && !n.isRead).length}
                 </p>
                 <p className="text-xs text-muted-foreground">Leads nuevos</p>
               </div>
@@ -206,7 +153,7 @@ export function NotificationCenter() {
               </div>
               <div>
                 <p className="text-2xl font-bold">
-                  {filteredNotifications.filter(n => n.type === 'visit' && !n.read).length}
+                  {filteredNotifications.filter(n => getCategory(n.relatedTo) === 'visit' && !n.isRead).length}
                 </p>
                 <p className="text-xs text-muted-foreground">Visitas próximas</p>
               </div>
@@ -221,7 +168,7 @@ export function NotificationCenter() {
               </div>
               <div>
                 <p className="text-2xl font-bold">
-                  {filteredNotifications.filter(n => n.type === 'property' && !n.read).length}
+                  {filteredNotifications.filter(n => getCategory(n.relatedTo) === 'property' && !n.isRead).length}
                 </p>
                 <p className="text-xs text-muted-foreground">Propiedades</p>
               </div>
@@ -281,77 +228,81 @@ export function NotificationCenter() {
             </div>
           ) : (
             <div className="space-y-3">
-              {displayedNotifications.map((notification) => (
-                <Card 
-                  key={notification.id} 
-                  className={cn(
-                    "transition-colors",
-                    !notification.read && "bg-primary/5 border-primary/20"
-                  )}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-4">
-                      <div className={cn(
-                        "p-2 rounded-lg flex-shrink-0",
-                        notification.read ? "bg-muted" : "bg-primary/10"
-                      )}>
-                        {getNotificationIcon(notification.type)}
-                      </div>
-                      
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <h4 className={cn(
-                              "font-medium",
-                              !notification.read && "text-primary"
-                            )}>
-                              {notification.title}
-                            </h4>
-                            <p className="text-sm text-muted-foreground mt-1">
-                              {notification.message}
-                            </p>
-                            <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
-                              <Clock className="w-3 h-3" />
-                              {getTimeAgo(notification.createdAt)}
-                            </p>
-                          </div>
-                          
-                          <div className="flex items-center gap-1">
-                            {!notification.read && (
+              {displayedNotifications.map((notification) => {
+                const category = getCategory(notification.relatedTo);
+                const link = getLink(notification.relatedTo);
+                return (
+                  <Card
+                    key={notification.id}
+                    className={cn(
+                      "transition-colors",
+                      !notification.isRead && "bg-primary/5 border-primary/20"
+                    )}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-4">
+                        <div className={cn(
+                          "p-2 rounded-lg flex-shrink-0",
+                          notification.isRead ? "bg-muted" : "bg-primary/10"
+                        )}>
+                          {getNotificationIcon(category)}
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <h4 className={cn(
+                                "font-medium",
+                                !notification.isRead && "text-primary"
+                              )}>
+                                {notification.title}
+                              </h4>
+                              <p className="text-sm text-muted-foreground mt-1">
+                                {notification.message}
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+                                <Clock className="w-3 h-3" />
+                                {getTimeAgo(notification.createdAt)}
+                              </p>
+                            </div>
+
+                            <div className="flex items-center gap-1">
+                              {!notification.isRead && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => markAsRead(notification.id)}
+                                  title="Marcar como leída"
+                                >
+                                  <CheckCircle2 className="w-4 h-4 text-green-500" />
+                                </Button>
+                              )}
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => markAsRead(notification.id)}
-                                title="Marcar como leída"
+                                onClick={() => remove(notification.id)}
+                                title="Eliminar"
                               >
-                                <CheckCircle2 className="w-4 h-4 text-green-500" />
+                                <X className="w-4 h-4 text-red-500" />
                               </Button>
-                            )}
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => deleteNotification(notification.id)}
-                              title="Eliminar"
-                            >
-                              <X className="w-4 h-4 text-red-500" />
-                            </Button>
+                            </div>
                           </div>
+
+                          {link && (
+                            <div className="mt-3">
+                              <Button variant="outline" size="sm" asChild>
+                                <Link to={link}>
+                                  Ver detalles
+                                </Link>
+                              </Button>
+                            </div>
+                          )}
                         </div>
-                        
-                        {notification.link && (
-                          <div className="mt-3">
-                            <Button variant="outline" size="sm" asChild>
-                              <Link to={notification.link}>
-                                Ver detalles
-                              </Link>
-                            </Button>
-                          </div>
-                        )}
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           )}
         </TabsContent>
