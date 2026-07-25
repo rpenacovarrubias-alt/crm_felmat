@@ -1,8 +1,11 @@
 import { PrismaClient } from '@prisma/client';
+import { requireApiKey } from '../../_lib/auth.js';
 
 const prisma = new PrismaClient();
 
 export default async function handler(req, res) {
+  if (!requireApiKey(req, res)) return;
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -24,6 +27,8 @@ export default async function handler(req, res) {
 
     const duplicado = await prisma.anuncio.create({
       data: {
+        agentId: original.agentId,
+        modo: original.modo,
         titulo: `${original.titulo} (Copia)`,
         subtitulo: original.subtitulo,
         slug: nuevoSlug,

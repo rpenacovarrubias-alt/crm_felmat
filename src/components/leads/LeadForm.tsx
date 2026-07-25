@@ -5,7 +5,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { useLeads, useProperties } from '@/hooks/useDatabase';
+import { useLeads, useProperties, notify } from '@/hooks/useDatabase';
 import type { Lead, LeadStatus, LeadSource } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -117,12 +117,27 @@ export function LeadForm() {
 
     try {
       if (isEditing && id) {
+        const statusChangedToGanado = formData.status === 'cerrado_ganado' && existingLead?.status !== 'cerrado_ganado';
         await update(id, formData);
+        if (statusChangedToGanado) {
+          await notify(user.id, {
+            title: 'Lead cerrado ganado',
+            message: `${formData.name || 'Un cliente'} pasó a Cerrado Ganado`,
+            type: 'success',
+            relatedTo: { type: 'lead', id },
+          });
+        }
       } else {
-        await create({
+        const newLead = await create({
           ...formData,
           assignedTo: user.id,
         } as Omit<Lead, 'id' | 'createdAt' | 'updatedAt' | 'notes'>);
+        await notify(user.id, {
+          title: 'Nuevo lead',
+          message: `${newLead.name} fue agregado a tu pipeline`,
+          type: 'info',
+          relatedTo: { type: 'lead', id: newLead.id },
+        });
       }
 
       navigate('/leads');

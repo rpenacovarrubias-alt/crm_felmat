@@ -20,6 +20,7 @@ const SharedLists = lazy(() => import('@/components/lists/SharedLists'));
 const PublicList = lazy(() => import('@/components/lists/PublicList'));
 const LeadList = lazy(() => import('@/components/leads/LeadList'));
 const LeadForm = lazy(() => import('@/components/leads/LeadForm'));
+const ImportarLeadsPage = lazy(() => import('@/components/leads/ImportarLeadsPage'));
 const Calendar = lazy(() => import('@/components/calendar/VisitCalendar'));
 const Website = lazy(() => import('@/components/website/WebsiteBuilder'));
 const Activities = lazy(() => import('@/components/activities/ActivitiesList'));
@@ -28,6 +29,8 @@ const Settings = lazy(() => import('@/pages/Settings'));
 const Profile = lazy(() => import('@/components/profile/ProfilePage'));
 const Users = lazy(() => import('@/components/users/UserManagement'));
 const Anuncios = lazy(() => import('@/components/anuncios/Anuncios'));
+const AnuncioForm = lazy(() => import('@/components/anuncios/AnuncioForm'));
+const AnuncioDetail = lazy(() => import('@/components/anuncios/AnuncioDetail'));
 const CondominiosPage = lazy(() => import('@/components/condominios/CondominiosPage'));
 const CotizacionesList = lazy(() => import('@/components/cotizaciones/CotizacionesList'));
 const CotizacionForm = lazy(() => import('@/components/cotizaciones/CotizacionForm'));
@@ -94,7 +97,7 @@ function AppRoutes() {
             {/* Leads */}
             <Route path="/leads" element={<LeadList />} />
             <Route path="/leads/new" element={<LeadForm />} />
-            <Route path="/leads/importar" element={<ModulePlaceholder title="Importar Leads" />} />
+            <Route path="/leads/importar" element={<ImportarLeadsPage />} />
             <Route path="/leads/:id" element={<LeadForm />} />
             <Route path="/leads/:id/edit" element={<LeadForm />} />
             
@@ -121,9 +124,9 @@ function AppRoutes() {
             
             {/* Anuncios */}
             <Route path="/anuncios" element={<Anuncios />} />
-            <Route path="/anuncios/nuevo" element={<ModulePlaceholder title="Nuevo Anuncio" />} />
-            <Route path="/anuncios/:id" element={<ModulePlaceholder title="Detalle de Anuncio" />} />
-            <Route path="/anuncios/:id/editar" element={<ModulePlaceholder title="Editar Anuncio" />} />
+            <Route path="/anuncios/nuevo" element={<AnuncioForm />} />
+            <Route path="/anuncios/:id" element={<AnuncioDetail />} />
+            <Route path="/anuncios/:id/editar" element={<AnuncioForm />} />
             
             {/* Condominios */}
             <Route path="/admin/condominios" element={<CondominiosPage />} />
@@ -146,9 +149,9 @@ function AppRoutes() {
             
             {/* Airbnb */}
             <Route path="/airbnb/anuncios" element={<Anuncios />} />
-            <Route path="/airbnb/anuncios/nuevo" element={<ModulePlaceholder title="Nuevo Anuncio Airbnb" />} />
-            <Route path="/airbnb/anuncios/:id" element={<ModulePlaceholder title="Detalle Anuncio Airbnb" />} />
-            <Route path="/airbnb/anuncios/:id/editar" element={<ModulePlaceholder title="Editar Anuncio Airbnb" />} />
+            <Route path="/airbnb/anuncios/nuevo" element={<AnuncioForm />} />
+            <Route path="/airbnb/anuncios/:id" element={<AnuncioDetail />} />
+            <Route path="/airbnb/anuncios/:id/editar" element={<AnuncioForm />} />
             <Route path="/airbnb/calendario" element={<AirbnbCalendarioPage />} />
             <Route path="/airbnb/precios" element={<AirbnbPreciosPage />} />
             <Route path="/airbnb/mensajes" element={<AirbnbMensajesPage />} />

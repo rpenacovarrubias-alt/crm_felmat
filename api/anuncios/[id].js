@@ -1,8 +1,11 @@
 import { PrismaClient } from '@prisma/client';
+import { requireApiKey } from '../_lib/auth.js';
 
 const prisma = new PrismaClient();
 
 export default async function handler(req, res) {
+  if (!requireApiKey(req, res)) return;
+
   const { id } = req.query;
 
   if (req.method === 'GET') {
@@ -32,15 +35,27 @@ export default async function handler(req, res) {
       delete data.createdAt;
       delete data.updatedAt;
       delete data.slug;
+      const imagenes = data.imagenes;
+      delete data.imagenes;
+      delete data.publicaciones;
 
       const anuncio = await prisma.anuncio.update({
         where: { id },
-        data,
-        include: { imagenes: true, publicaciones: true },
+        data: {
+          ...data,
+          ...(imagenes ? {
+            imagenes: {
+              deleteMany: {},
+              create: imagenes.map((img, i) => ({ url: img.url, esPrincipal: img.esPrincipal, orden: i })),
+            },
+          } : {}),
+        },
+        include: { imagenes: { orderBy: { orden: 'asc' } }, publicaciones: true },
       });
 
       return res.status(200).json(anuncio);
     } catch (error) {
+      console.error('Error:', error);
       return res.status(500).json({ error: 'Error al actualizar anuncio' });
     }
   }

@@ -28,22 +28,13 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/useAuth';
+import {
+  listarAnuncios, eliminarAnuncio, duplicarAnuncio, publicarAnuncio,
+  type Anuncio,
+} from '@/lib/anunciosApi';
 
-interface Imagen { url: string; esPrincipal: boolean; orden?: number; }
-interface Publicacion { canal: string; estado: string; externalUrl?: string; publicadoAt?: string; }
-interface Anuncio {
-  id: string; titulo: string; subtitulo?: string; slug: string;
-  tipoPropiedad: string; modalidadRenta: string; colonia: string; ciudad: string;
-  precio: number; periodo: string; moneda: string;
-  estado: 'BORRADOR' | 'REVISION' | 'PUBLICADO' | 'PAUSADO' | 'EXPIRADO' | 'ARCHIVADO';
-  destacado: boolean; recamaras: number; banos: number;
-  createdAt: string; updatedAt: string; fechaPublicacion?: string;
-  imagenes: Imagen[]; publicaciones: Publicacion[];
-  vistas: number; contactos: number;
-  _count?: { publicaciones: number; };
-}
-
-const TIPOS_PROPIEDAD: Record<string, { label: string; color: string }> = {
+export const TIPOS_PROPIEDAD: Record<string, { label: string; color: string }> = {
   CASA: { label: 'Casa', color: 'bg-blue-100 text-blue-800 border-blue-200' },
   DEPARTAMENTO: { label: 'Departamento', color: 'bg-purple-100 text-purple-800 border-purple-200' },
   LOFT: { label: 'Loft', color: 'bg-pink-100 text-pink-800 border-pink-200' },
@@ -52,7 +43,7 @@ const TIPOS_PROPIEDAD: Record<string, { label: string; color: string }> = {
   LOCAL: { label: 'Local', color: 'bg-gray-100 text-gray-800 border-gray-200' },
 };
 
-const MODALIDADES: Record<string, { label: string; color: string }> = {
+export const MODALIDADES: Record<string, { label: string; color: string }> = {
   AIRBNB: { label: 'Airbnb', color: 'bg-rose-100 text-rose-800 border-rose-200' },
   AMUEBLADA_LP: { label: 'Amueblada LP', color: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
   SIN_MUEBLES_LP: { label: 'Sin Muebles LP', color: 'bg-blue-100 text-blue-800 border-blue-200' },
@@ -77,6 +68,7 @@ const CANALES: Record<string, { label: string; icon: React.ElementType; color: s
 
 export default function ListaAnuncios({ modo = 'admin' }: { modo?: 'admin' | 'airbnb' }) {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [anuncios, setAnuncios] = useState<Anuncio[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
@@ -92,18 +84,18 @@ export default function ListaAnuncios({ modo = 'admin' }: { modo?: 'admin' | 'ai
   const basePath = modo === 'admin' ? '' : '/airbnb';
 
   const cargarAnuncios = useCallback(async () => {
+    if (!user) return;
     setLoading(true);
     try {
-      const params = new URLSearchParams();
-      if (filters.estado) params.append('estado', filters.estado);
-      if (filters.tipo) params.append('tipo', filters.tipo);
-      if (filters.modalidad) params.append('modalidad', filters.modalidad);
-      if (filters.busqueda) params.append('q', filters.busqueda);
-      if (filters.ordenar) params.append('ordenar', filters.ordenar);
-
-      const response = await fetch(`/api/anuncios?${params.toString()}`);
-      if (!response.ok) throw new Error('Error en la respuesta');
-      const data = await response.json();
+      const data = await listarAnuncios({
+        agentId: user.id,
+        modo,
+        estado: filters.estado,
+        tipo: filters.tipo,
+        modalidad: filters.modalidad,
+        q: filters.busqueda,
+        ordenar: filters.ordenar,
+      });
       setAnuncios(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Error cargando anuncios:', error);
@@ -112,7 +104,7 @@ export default function ListaAnuncios({ modo = 'admin' }: { modo?: 'admin' | 'ai
     } finally {
       setLoading(false);
     }
-  }, [filters]);
+  }, [filters, modo, user]);
 
   useEffect(() => { cargarAnuncios(); }, [cargarAnuncios]);
 
@@ -125,50 +117,40 @@ export default function ListaAnuncios({ modo = 'admin' }: { modo?: 'admin' | 'ai
     if (!anuncioEliminar) return;
     setIsDeleting(true);
     try {
-      const response = await fetch(`/api/anuncios/${anuncioEliminar.id}`, { method: 'DELETE' });
-      if (response.ok) {
-        toast.success('Anuncio eliminado correctamente');
-        setAnuncios(prev => prev.filter(a => a.id !== anuncioEliminar.id));
-        setAnuncioEliminar(null);
-      } else {
-        const error = await response.json();
-        toast.error(error.error || 'Error al eliminar');
-      }
-    } catch (error) { toast.error('Error al eliminar');
-    } finally { setIsDeleting(false); }
+      await eliminarAnuncio(anuncioEliminar.id);
+      toast.success('Anuncio eliminado correctamente');
+      setAnuncios(prev => prev.filter(a => a.id !== anuncioEliminar.id));
+      setAnuncioEliminar(null);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Error al eliminar');
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const handleDuplicar = async (anuncio: Anuncio) => {
     try {
-      const response = await fetch(`/api/anuncios/${anuncio.id}/duplicar`, { method: 'POST' });
-      if (response.ok) {
-        const nuevo = await response.json();
-        toast.success('Anuncio duplicado');
-        navigate(`${basePath}/anuncios/${nuevo.id}/editar`);
-      } else { toast.error('Error al duplicar'); }
-    } catch (error) { toast.error('Error al duplicar'); }
+      const nuevo = await duplicarAnuncio(anuncio.id);
+      toast.success('Anuncio duplicado');
+      navigate(`${basePath}/anuncios/${nuevo.id}/editar`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Error al duplicar');
+    }
   };
 
   const handlePublicar = async (canales: string[]) => {
     if (!anuncioPublicar) return;
     setIsPublishing(true);
     try {
-      const response = await fetch('/api/publicar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ anuncioId: anuncioPublicar.id, canales }),
-      });
-      if (response.ok) {
-        const data = await response.json();
-        toast.success(data.mensaje || 'Publicación iniciada');
-        setAnuncioPublicar(null);
-        cargarAnuncios();
-      } else {
-        const error = await response.json();
-        toast.error(error.error || 'Error al publicar');
-      }
-    } catch (error) { toast.error('Error al publicar');
-    } finally { setIsPublishing(false); }
+      const data = await publicarAnuncio(anuncioPublicar.id, canales);
+      toast.success(data.mensaje || 'Publicación iniciada');
+      setAnuncioPublicar(null);
+      cargarAnuncios();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Error al publicar');
+    } finally {
+      setIsPublishing(false);
+    }
   };
 
   const getEstadoPublicacion = (anuncio: Anuncio, canal: string) => {

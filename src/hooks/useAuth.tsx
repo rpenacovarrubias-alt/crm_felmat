@@ -4,6 +4,10 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { User, UserRole } from '@/types';
+import dbManager from '@/hooks/useDatabase';
+
+// Store de IndexedDB donde vive el directorio de usuarios (mismo que useUsers() en useDatabase.ts)
+const USERS_STORE = 'users';
 
 // Datos de demo para iniciar rápidamente
 const DEMO_USERS: User[] = [
@@ -65,7 +69,6 @@ const DEMO_USERS: User[] = [
 
 // Storage keys
 const AUTH_STORAGE_KEY = 'proptech_auth_user';
-const USERS_STORAGE_KEY = 'proptech_users';
 
 interface AuthContextType {
   user: User | null;
@@ -98,38 +101,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [users, setUsers] = useState<User[]>(DEMO_USERS);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Cargar datos al iniciar
+  // Cargar directorio de usuarios desde IndexedDB (misma fuente que useUsers()),
+  // sembrando los usuarios demo la primera vez que el store está vacío.
   useEffect(() => {
-    const storedUser = localStorage.getItem(AUTH_STORAGE_KEY);
-    const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
-    
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch {
-        localStorage.removeItem(AUTH_STORAGE_KEY);
+    (async () => {
+      let dbUsers = await dbManager.getAll<User>(USERS_STORE);
+      if (dbUsers.length === 0) {
+        for (const demoUser of DEMO_USERS) {
+          await dbManager.put(USERS_STORE, demoUser);
+        }
+        dbUsers = await dbManager.getAll<User>(USERS_STORE);
       }
-    }
-    
-    if (storedUsers) {
-      try {
-        setUsers(JSON.parse(storedUsers));
-      } catch {
-        localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(DEMO_USERS));
-      }
-    } else {
-      localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(DEMO_USERS));
-    }
-    
-    setIsLoading(false);
-  }, []);
+      setUsers(dbUsers);
 
-  // Guardar usuarios cuando cambien
-  useEffect(() => {
-    if (!isLoading) {
-      localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
-    }
-  }, [users, isLoading]);
+      const storedUser = localStorage.getItem(AUTH_STORAGE_KEY);
+      if (storedUser) {
+        try {
+          const parsed = JSON.parse(storedUser) as User;
+          setUser(dbUsers.find(u => u.id === parsed.id) || parsed);
+        } catch {
+          localStorage.removeItem(AUTH_STORAGE_KEY);
+        }
+      }
+
+      setIsLoading(false);
+    })();
+  }, []);
 
   // Login
   const login = useCallback(async (email: string, password: string): Promise<boolean> => {
@@ -154,6 +151,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
+      await dbManager.put(USERS_STORE, demoUser);
+      setUsers(prev => [...prev, demoUser]);
       setUser(demoUser);
       localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(demoUser));
       return true;
@@ -170,9 +169,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const updateUser = useCallback(async (updates: Partial<User>): Promise<void> => {
     if (!user) throw new Error('No user logged in');
     const updated = { ...user, ...updates, updatedAt: new Date().toISOString() };
+    await dbManager.put(USERS_STORE, updated);
     setUser(updated);
     localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(updated));
-    
+
     // Actualizar también en la lista de usuarios
     setUsers(prev => prev.map(u => u.id === updated.id ? updated : u));
   }, [user]);
@@ -199,7 +199,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
-    
+
+    await dbManager.put(USERS_STORE, newUser);
     setUsers(prev => [...prev, newUser]);
     return newUser;
   }, [user]);
@@ -208,24 +209,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!user || user.role !== 'admin') {
       throw new Error('Solo el administrador puede actualizar usuarios');
     }
-    
-    setUsers(prev => prev.map(u => 
-      u.id === id 
-        ? { ...u, ...updates, updatedAt: new Date().toISOString() }
-        : u
-    ));
+
+    const existing = await dbManager.get<User>(USERS_STORE, id);
+    if (!existing) throw new Error('Usuario no encontrado');
+    const updated = { ...existing, ...updates, updatedAt: new Date().toISOString() };
+    await dbManager.put(USERS_STORE, updated);
+    setUsers(prev => prev.map(u => u.id === id ? updated : u));
   }, [user]);
 
   const deleteUser = useCallback(async (id: string): Promise<void> => {
     if (!user || user.role !== 'admin') {
       throw new Error('Solo el administrador puede eliminar usuarios');
     }
-    
+
     // No permitir eliminar el propio usuario admin
     if (id === user.id) {
       throw new Error('No puedes eliminar tu propia cuenta');
     }
-    
+
+    await dbManager.delete(USERS_STORE, id);
     setUsers(prev => prev.filter(u => u.id !== id));
   }, [user]);
 
@@ -233,12 +235,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!user || user.role !== 'admin') {
       throw new Error('Solo el administrador puede cambiar el estado de usuarios');
     }
-    
-    setUsers(prev => prev.map(u => 
-      u.id === id 
-        ? { ...u, isActive: !u.isActive, updatedAt: new Date().toISOString() }
-        : u
-    ));
+
+    const existing = await dbManager.get<User>(USERS_STORE, id);
+    if (!existing) throw new Error('Usuario no encontrado');
+    const updated = { ...existing, isActive: !existing.isActive, updatedAt: new Date().toISOString() };
+    await dbManager.put(USERS_STORE, updated);
+    setUsers(prev => prev.map(u => u.id === id ? updated : u));
   }, [user]);
 
   // ============================================

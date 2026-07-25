@@ -5,7 +5,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { useProperties } from '@/hooks/useDatabase';
+import { useProperties, notify } from '@/hooks/useDatabase';
 import type { Property, PropertyType, PropertyStatus, TransactionType, PropertyImage } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -328,9 +328,25 @@ export function PropertyForm() {
       } as Omit<Property, 'id' | 'createdAt' | 'updatedAt' | 'views' | 'leadsCount' | 'favoritesCount'>;
 
       if (isEditing && id) {
+        const closedNow = (propertyData.status === 'vendido' || propertyData.status === 'rentado')
+          && existingProperty?.status !== propertyData.status;
         await update(id, propertyData);
+        if (closedNow) {
+          await notify(user.id, {
+            title: propertyData.status === 'vendido' ? 'Propiedad vendida' : 'Propiedad rentada',
+            message: `"${propertyData.title}" se marcó como ${propertyData.status}`,
+            type: 'success',
+            relatedTo: { type: 'property', id },
+          });
+        }
       } else {
-        await create(propertyData);
+        const newProperty = await create(propertyData);
+        await notify(user.id, {
+          title: 'Nueva propiedad agregada',
+          message: `"${newProperty.title}" se agregó a tu inventario`,
+          type: 'info',
+          relatedTo: { type: 'property', id: newProperty.id },
+        });
       }
 
       navigate('/propiedades');

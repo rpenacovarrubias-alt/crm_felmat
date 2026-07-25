@@ -5,7 +5,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { useLeads, useProperties } from '@/hooks/useDatabase';
+import { useLeads, useProperties, notify } from '@/hooks/useDatabase';
 import type { Lead, LeadStatus } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -288,6 +288,20 @@ function PipelineView({ leads, onMoveStage }: { leads: Lead[]; onMoveStage: (id:
 export function LeadList() {
   const { user } = useAuth();
   const { leads, loading, moveToStage } = useLeads(user?.id);
+
+  const handleMoveStage = async (leadId: string, stage: LeadStatus) => {
+    const lead = leads.find(l => l.id === leadId);
+    await moveToStage(leadId, stage);
+    if (stage === 'cerrado_ganado' && lead && lead.status !== 'cerrado_ganado' && user) {
+      await notify(user.id, {
+        title: 'Lead cerrado ganado',
+        message: `${lead.name} pasó a Cerrado Ganado`,
+        type: 'success',
+        relatedTo: { type: 'lead', id: leadId },
+      });
+    }
+  };
+
   const [viewMode, setViewMode] = useState<'list' | 'pipeline'>('pipeline');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -450,7 +464,7 @@ export function LeadList() {
           </Button>
         </div>
       ) : viewMode === 'pipeline' ? (
-        <PipelineView leads={filteredLeads} onMoveStage={moveToStage} />
+        <PipelineView leads={filteredLeads} onMoveStage={handleMoveStage} />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredLeads.map((lead) => (

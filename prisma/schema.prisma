@@ -18,6 +18,8 @@ model User {
 
 model Anuncio {
   id              String   @id @default(cuid())
+  agentId         String
+  modo            String   @default("admin")
   titulo          String
   subtitulo       String?
   slug            String   @unique
@@ -43,11 +45,13 @@ model Anuncio {
   publicaciones   PublicacionCanal[]
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
-  
+
   @@index([estado])
   @@index([tipoPropiedad])
   @@index([modalidadRenta])
   @@index([createdAt])
+  @@index([agentId])
+  @@index([modo])
 }
 
 model ImagenAnuncio {

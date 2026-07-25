@@ -491,6 +491,10 @@ export function useNotifications(userId?: string) {
 
   useEffect(() => {
     refresh();
+    // Poll periódicamente: Header/NotificationCenter quedan montados toda la sesión
+    // y no hay pub/sub entre pestañas/componentes al escribir vía notify() directamente.
+    const interval = setInterval(refresh, 15000);
+    return () => clearInterval(interval);
   }, [refresh]);
 
   const create = async (notification: Omit<Notification, 'id' | 'createdAt' | 'isRead'>): Promise<Notification> => {
@@ -1194,6 +1198,22 @@ export function useAmenidadesCatalogo(agentId?: string) {
   };
 
   return { amenidades, loading, create, remove, refresh };
+}
+
+// Disparador de notificaciones invocable desde cualquier lugar (no es un hook de React,
+// para poder llamarse dentro de handlers de submit sin violar las reglas de hooks).
+export async function notify(
+  userId: string,
+  data: Omit<Notification, 'id' | 'userId' | 'createdAt' | 'isRead'>
+): Promise<void> {
+  const notification: Notification = {
+    ...data,
+    id: crypto.randomUUID(),
+    userId,
+    isRead: false,
+    createdAt: new Date().toISOString(),
+  };
+  await dbManager.put(STORES.notifications, notification);
 }
 
 export default dbManager;

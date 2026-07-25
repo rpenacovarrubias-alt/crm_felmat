@@ -13,4 +13,9 @@ export default defineConfig({
     outDir: 'dist',
     sourcemap: true,
   },
+  preview: {
+    proxy: {
+      '/api': 'http://localhost:4181',
+    },
+  },
 });
