@@ -315,6 +315,167 @@ export interface SharedProperty {
   expiresAt?: string;
 }
 
+// Administración de condominios
+export type TipoUnidad = 'departamento' | 'casa' | 'local' | 'oficina';
+export type EstatusPagoUnidad = 'al_corriente' | 'atrasado' | 'moroso';
+
+export interface Condominio {
+  id: string;
+  nombre: string;
+  direccion: string;
+  agentId: string;
+  amenidades: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UnidadCondominio {
+  id: string;
+  condominioId: string;
+  numero: string;
+  tipo: TipoUnidad;
+  metrosCuadrados?: number;
+  propietarioNombre: string;
+  propietarioTelefono?: string;
+  propietarioEmail?: string;
+  residenteNombre?: string;
+  cuotaMensual: number;
+  estatusPago: EstatusPagoUnidad;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Cotizaciones (venta/renta/servicios a clientes)
+export type EstatusCotizacion = 'borrador' | 'enviada' | 'aceptada' | 'rechazada' | 'vencida';
+
+export interface ItemCotizacion {
+  id: string;
+  descripcion: string;
+  cantidad: number;
+  precioUnitario: number;
+}
+
+export interface Cotizacion {
+  id: string;
+  folio: string;
+  agentId: string;
+  clienteNombre: string;
+  clienteEmail?: string;
+  clienteTelefono?: string;
+  propertyId?: string;
+  items: ItemCotizacion[];
+  notas?: string;
+  vigenciaDias: number;
+  estatus: EstatusCotizacion;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Carta de presentación del agente (documento de prospección)
+export interface CartaPresentacion {
+  id: string;
+  agentId: string;
+  titulo: string;
+  cuerpo: string;
+  incluirLogo: boolean;
+  updatedAt: string;
+}
+
+// Legal: contratos y fianzas
+export type TipoContrato = 'compraventa' | 'arrendamiento' | 'comision' | 'exclusividad' | 'otro';
+export type EstatusContrato = 'borrador' | 'revision' | 'firmado' | 'cancelado';
+
+export interface Contrato {
+  id: string;
+  agentId: string;
+  tipo: TipoContrato;
+  titulo: string;
+  propertyId?: string;
+  leadId?: string;
+  contenido: string;
+  estatus: EstatusContrato;
+  fechaFirma?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type EstatusFianza = 'vigente' | 'por_vencer' | 'vencida' | 'cancelada';
+
+export interface Fianza {
+  id: string;
+  agentId: string;
+  contratoId?: string;
+  titular: string;
+  monto: number;
+  aseguradora?: string;
+  numeroPoliza?: string;
+  fechaInicio: string;
+  fechaVencimiento: string;
+  estatus: EstatusFianza;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Airbnb: anuncios enlazados/scrapeados (integracion con scraper externo)
+export type EstatusReservaAirbnb = 'confirmada' | 'pendiente' | 'cancelada' | 'completada';
+
+export interface AirbnbListing {
+  id: string;
+  agentId: string;
+  propertyId?: string;
+  titulo: string;
+  urlAnuncio: string;
+  plataforma: 'airbnb' | 'booking' | 'vrbo' | 'otro';
+  precioNoche?: number;
+  calificacion?: number;
+  ultimaSincronizacion?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AirbnbMensaje {
+  id: string;
+  listingId: string;
+  huespedNombre: string;
+  contenido: string;
+  esDeAgente: boolean;
+  createdAt: string;
+}
+
+export interface AirbnbReserva {
+  id: string;
+  listingId: string;
+  huespedNombre: string;
+  checkIn: string;
+  checkOut: string;
+  totalHuespedes: number;
+  montoTotal: number;
+  estatus: EstatusReservaAirbnb;
+  createdAt: string;
+}
+
+export interface AirbnbPrecio {
+  id: string;
+  listingId: string;
+  fecha: string; // YYYY-MM-DD
+  precio: number;
+}
+
+// Catálogos personalizables de tipos de propiedad y amenidades
+export interface TipoPropiedadCustom {
+  id: string;
+  agentId: string;
+  label: string;
+  createdAt: string;
+}
+
+export interface AmenidadCatalogo {
+  id: string;
+  agentId: string;
+  label: string;
+  createdAt: string;
+}
+
 // Lista pública de propiedades (para compartir con clientes)
 export interface PropertyList {
   id: string;

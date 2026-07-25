@@ -28,6 +28,22 @@ const Settings = lazy(() => import('@/pages/Settings'));
 const Profile = lazy(() => import('@/components/profile/ProfilePage'));
 const Users = lazy(() => import('@/components/users/UserManagement'));
 const Anuncios = lazy(() => import('@/components/anuncios/Anuncios'));
+const CondominiosPage = lazy(() => import('@/components/condominios/CondominiosPage'));
+const CotizacionesList = lazy(() => import('@/components/cotizaciones/CotizacionesList'));
+const CotizacionForm = lazy(() => import('@/components/cotizaciones/CotizacionForm'));
+const CartaPresentacionPage = lazy(() => import('@/components/carta-presentacion/CartaPresentacionPage'));
+const ContratosList = lazy(() => import('@/components/legal/ContratosList'));
+const ContratoForm = lazy(() => import('@/components/legal/ContratoForm'));
+const FianzasPage = lazy(() => import('@/components/legal/FianzasPage'));
+const AirbnbCalendarioPage = lazy(() => import('@/components/airbnb/AirbnbCalendarioPage'));
+const AirbnbPreciosPage = lazy(() => import('@/components/airbnb/AirbnbPreciosPage'));
+const AirbnbMensajesPage = lazy(() => import('@/components/airbnb/AirbnbMensajesPage'));
+const AirbnbReservasPage = lazy(() => import('@/components/airbnb/AirbnbReservasPage'));
+const ReportesVentasPage = lazy(() => import('@/components/reportes/ReportesVentasPage'));
+const ReportesLeadsPage = lazy(() => import('@/components/reportes/ReportesLeadsPage'));
+const TiposPropiedadPage = lazy(() => import('@/components/propiedades/TiposPropiedadPage'));
+const AmenidadesPage = lazy(() => import('@/components/propiedades/AmenidadesPage'));
+const VinculacionesPage = lazy(() => import('@/components/vinculaciones/VinculacionesPage'));
 
 // Placeholder simple para módulos en desarrollo
 function ModulePlaceholder({ title, description }: { title: string; description?: string }) {
@@ -66,13 +82,13 @@ function AppRoutes() {
             {/* Properties */}
             <Route path="/propiedades" element={<PropertyList />} />
             <Route path="/propiedades/nueva" element={<PropertyForm />} />
-            <Route path="/propiedades/tipos" element={<ModulePlaceholder title="Tipos de Propiedades" />} />
-            <Route path="/propiedades/amenidades" element={<ModulePlaceholder title="Amenidades" />} />
+            <Route path="/propiedades/tipos" element={<TiposPropiedadPage />} />
+            <Route path="/propiedades/amenidades" element={<AmenidadesPage />} />
             <Route path="/propiedades/desempeno" element={<PropertyPerformance />} />
             <Route path="/propiedades/:id" element={<PropertyDetail />} />
             <Route path="/propiedades/:id/edit" element={<PropertyForm />} />
             <Route path="/estimaciones" element={<EstimacionesPage />} />
-            <Route path="/vinculaciones" element={<ModulePlaceholder title="Vinculaciones" />} />
+            <Route path="/vinculaciones" element={<VinculacionesPage />} />
             <Route path="/listas-compartidas" element={<SharedLists />} />
             
             {/* Leads */}
@@ -110,35 +126,37 @@ function AppRoutes() {
             <Route path="/anuncios/:id/editar" element={<ModulePlaceholder title="Editar Anuncio" />} />
             
             {/* Condominios */}
-            <Route path="/admin/condominios" element={<ModulePlaceholder title="Administración de Condominios" />} />
-            <Route path="/admin/condominios/nuevo" element={<ModulePlaceholder title="Nuevo Condominio" />} />
+            <Route path="/admin/condominios" element={<CondominiosPage />} />
+            <Route path="/admin/condominios/nuevo" element={<Navigate to="/admin/condominios" replace />} />
             
             {/* Carta Presentación */}
-            <Route path="/carta-presentacion" element={<ModulePlaceholder title="Carta de Presentación" />} />
+            <Route path="/carta-presentacion" element={<CartaPresentacionPage />} />
             
             {/* Cotizaciones */}
-            <Route path="/cotizaciones" element={<ModulePlaceholder title="Cotizaciones" />} />
-            <Route path="/cotizaciones/nueva" element={<ModulePlaceholder title="Nueva Cotización" />} />
+            <Route path="/cotizaciones" element={<CotizacionesList />} />
+            <Route path="/cotizaciones/nueva" element={<CotizacionForm />} />
+            <Route path="/cotizaciones/:id" element={<CotizacionForm />} />
             
             {/* Legal */}
-            <Route path="/legal/contratos" element={<ModulePlaceholder title="Contratos" />} />
-            <Route path="/legal/contratos/nuevo" element={<ModulePlaceholder title="Nuevo Contrato" />} />
-            <Route path="/legal/fianzas" element={<ModulePlaceholder title="Fianzas" />} />
-            <Route path="/legal/fianzas/nueva" element={<ModulePlaceholder title="Nueva Fianza" />} />
+            <Route path="/legal/contratos" element={<ContratosList />} />
+            <Route path="/legal/contratos/nuevo" element={<ContratoForm />} />
+            <Route path="/legal/contratos/:id" element={<ContratoForm />} />
+            <Route path="/legal/fianzas" element={<FianzasPage />} />
+            <Route path="/legal/fianzas/nueva" element={<Navigate to="/legal/fianzas" replace />} />
             
             {/* Airbnb */}
             <Route path="/airbnb/anuncios" element={<Anuncios />} />
             <Route path="/airbnb/anuncios/nuevo" element={<ModulePlaceholder title="Nuevo Anuncio Airbnb" />} />
             <Route path="/airbnb/anuncios/:id" element={<ModulePlaceholder title="Detalle Anuncio Airbnb" />} />
             <Route path="/airbnb/anuncios/:id/editar" element={<ModulePlaceholder title="Editar Anuncio Airbnb" />} />
-            <Route path="/airbnb/calendario" element={<ModulePlaceholder title="Calendario Airbnb" />} />
-            <Route path="/airbnb/precios" element={<ModulePlaceholder title="Precios Dinámicos" />} />
-            <Route path="/airbnb/mensajes" element={<ModulePlaceholder title="Mensajes Airbnb" />} />
-            <Route path="/airbnb/reservas" element={<ModulePlaceholder title="Reservas Airbnb" />} />
+            <Route path="/airbnb/calendario" element={<AirbnbCalendarioPage />} />
+            <Route path="/airbnb/precios" element={<AirbnbPreciosPage />} />
+            <Route path="/airbnb/mensajes" element={<AirbnbMensajesPage />} />
+            <Route path="/airbnb/reservas" element={<AirbnbReservasPage />} />
             
             {/* Reportes */}
-            <Route path="/reportes/ventas" element={<ModulePlaceholder title="Reportes de Ventas" />} />
-            <Route path="/reportes/leads" element={<ModulePlaceholder title="Reportes de Leads" />} />
+            <Route path="/reportes/ventas" element={<ReportesVentasPage />} />
+            <Route path="/reportes/leads" element={<ReportesLeadsPage />} />
             
             {/* 404 */}
             <Route path="*" element={

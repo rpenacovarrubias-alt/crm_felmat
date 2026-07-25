@@ -4,12 +4,14 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import type {
-  User, Property, Lead, LeadStatus, Activity, AgentWebsite, Notification, DashboardStats, PropertyList
+  User, Property, Lead, LeadStatus, Activity, AgentWebsite, Notification, DashboardStats, PropertyList,
+  Condominio, UnidadCondominio, Cotizacion, CartaPresentacion, Contrato, Fianza,
+  AirbnbListing, AirbnbMensaje, AirbnbReserva, AirbnbPrecio, TipoPropiedadCustom, AmenidadCatalogo,
 } from '@/types';
 
 // Nombre de la base de datos y versión
 const DB_NAME = 'PropTechCRM';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 // Stores (tablas)
 const STORES = {
@@ -23,6 +25,18 @@ const STORES = {
   agentWebsites: 'agentWebsites',
   notifications: 'notifications',
   propertyLists: 'propertyLists',
+  condominios: 'condominios',
+  unidadesCondominio: 'unidadesCondominio',
+  cotizaciones: 'cotizaciones',
+  cartaPresentacion: 'cartaPresentacion',
+  contratos: 'contratos',
+  fianzas: 'fianzas',
+  airbnbListings: 'airbnbListings',
+  airbnbMensajes: 'airbnbMensajes',
+  airbnbReservas: 'airbnbReservas',
+  airbnbPrecios: 'airbnbPrecios',
+  tiposPropiedadCustom: 'tiposPropiedadCustom',
+  amenidadesCatalogo: 'amenidadesCatalogo',
 } as const;
 
 // Clase para manejar IndexedDB
@@ -90,6 +104,54 @@ class DatabaseManager {
           const listStore = db.createObjectStore(STORES.propertyLists, { keyPath: 'id' });
           listStore.createIndex('agentId', 'agentId', { unique: false });
           listStore.createIndex('slug', 'slug', { unique: true });
+        }
+        if (!db.objectStoreNames.contains(STORES.condominios)) {
+          const store = db.createObjectStore(STORES.condominios, { keyPath: 'id' });
+          store.createIndex('agentId', 'agentId', { unique: false });
+        }
+        if (!db.objectStoreNames.contains(STORES.unidadesCondominio)) {
+          const store = db.createObjectStore(STORES.unidadesCondominio, { keyPath: 'id' });
+          store.createIndex('condominioId', 'condominioId', { unique: false });
+        }
+        if (!db.objectStoreNames.contains(STORES.cotizaciones)) {
+          const store = db.createObjectStore(STORES.cotizaciones, { keyPath: 'id' });
+          store.createIndex('agentId', 'agentId', { unique: false });
+        }
+        if (!db.objectStoreNames.contains(STORES.cartaPresentacion)) {
+          const store = db.createObjectStore(STORES.cartaPresentacion, { keyPath: 'id' });
+          store.createIndex('agentId', 'agentId', { unique: true });
+        }
+        if (!db.objectStoreNames.contains(STORES.contratos)) {
+          const store = db.createObjectStore(STORES.contratos, { keyPath: 'id' });
+          store.createIndex('agentId', 'agentId', { unique: false });
+        }
+        if (!db.objectStoreNames.contains(STORES.fianzas)) {
+          const store = db.createObjectStore(STORES.fianzas, { keyPath: 'id' });
+          store.createIndex('agentId', 'agentId', { unique: false });
+        }
+        if (!db.objectStoreNames.contains(STORES.airbnbListings)) {
+          const store = db.createObjectStore(STORES.airbnbListings, { keyPath: 'id' });
+          store.createIndex('agentId', 'agentId', { unique: false });
+        }
+        if (!db.objectStoreNames.contains(STORES.airbnbMensajes)) {
+          const store = db.createObjectStore(STORES.airbnbMensajes, { keyPath: 'id' });
+          store.createIndex('listingId', 'listingId', { unique: false });
+        }
+        if (!db.objectStoreNames.contains(STORES.airbnbReservas)) {
+          const store = db.createObjectStore(STORES.airbnbReservas, { keyPath: 'id' });
+          store.createIndex('listingId', 'listingId', { unique: false });
+        }
+        if (!db.objectStoreNames.contains(STORES.airbnbPrecios)) {
+          const store = db.createObjectStore(STORES.airbnbPrecios, { keyPath: 'id' });
+          store.createIndex('listingId', 'listingId', { unique: false });
+        }
+        if (!db.objectStoreNames.contains(STORES.tiposPropiedadCustom)) {
+          const store = db.createObjectStore(STORES.tiposPropiedadCustom, { keyPath: 'id' });
+          store.createIndex('agentId', 'agentId', { unique: false });
+        }
+        if (!db.objectStoreNames.contains(STORES.amenidadesCatalogo)) {
+          const store = db.createObjectStore(STORES.amenidadesCatalogo, { keyPath: 'id' });
+          store.createIndex('agentId', 'agentId', { unique: false });
         }
       };
     });
@@ -688,6 +750,450 @@ export function usePropertyLists(agentId?: string) {
   };
 
   return { lists, loading, create, update, remove, addProperty, removeProperty, getBySlug, incrementViews, refresh };
+}
+
+// Hook para Administración de Condominios
+export function useCondominios(agentId?: string) {
+  const [condominios, setCondominios] = useState<Condominio[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const refresh = useCallback(async () => {
+    let data: Condominio[];
+    if (agentId) {
+      data = await dbManager.getByIndex<Condominio>(STORES.condominios, 'agentId', agentId);
+    } else {
+      data = await dbManager.getAll<Condominio>(STORES.condominios);
+    }
+    data.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+    setCondominios(data);
+    setLoading(false);
+  }, [agentId]);
+
+  useEffect(() => { refresh(); }, [refresh]);
+
+  const create = async (input: Omit<Condominio, 'id' | 'createdAt' | 'updatedAt'>): Promise<Condominio> => {
+    const nuevo: Condominio = { ...input, id: crypto.randomUUID(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+    await dbManager.put(STORES.condominios, nuevo);
+    await refresh();
+    return nuevo;
+  };
+
+  const update = async (id: string, updates: Partial<Condominio>): Promise<void> => {
+    const existing = await dbManager.get<Condominio>(STORES.condominios, id);
+    if (!existing) throw new Error('Condominio no encontrado');
+    await dbManager.put(STORES.condominios, { ...existing, ...updates, updatedAt: new Date().toISOString() });
+    await refresh();
+  };
+
+  const remove = async (id: string): Promise<void> => {
+    await dbManager.delete(STORES.condominios, id);
+    await refresh();
+  };
+
+  return { condominios, loading, create, update, remove, refresh };
+}
+
+// Hook para Unidades de un Condominio
+export function useUnidadesCondominio(condominioId?: string) {
+  const [unidades, setUnidades] = useState<UnidadCondominio[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const refresh = useCallback(async () => {
+    let data: UnidadCondominio[];
+    if (condominioId) {
+      data = await dbManager.getByIndex<UnidadCondominio>(STORES.unidadesCondominio, 'condominioId', condominioId);
+    } else {
+      data = await dbManager.getAll<UnidadCondominio>(STORES.unidadesCondominio);
+    }
+    data.sort((a, b) => a.numero.localeCompare(b.numero));
+    setUnidades(data);
+    setLoading(false);
+  }, [condominioId]);
+
+  useEffect(() => { refresh(); }, [refresh]);
+
+  const create = async (input: Omit<UnidadCondominio, 'id' | 'createdAt' | 'updatedAt'>): Promise<UnidadCondominio> => {
+    const nueva: UnidadCondominio = { ...input, id: crypto.randomUUID(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+    await dbManager.put(STORES.unidadesCondominio, nueva);
+    await refresh();
+    return nueva;
+  };
+
+  const update = async (id: string, updates: Partial<UnidadCondominio>): Promise<void> => {
+    const existing = await dbManager.get<UnidadCondominio>(STORES.unidadesCondominio, id);
+    if (!existing) throw new Error('Unidad no encontrada');
+    await dbManager.put(STORES.unidadesCondominio, { ...existing, ...updates, updatedAt: new Date().toISOString() });
+    await refresh();
+  };
+
+  const remove = async (id: string): Promise<void> => {
+    await dbManager.delete(STORES.unidadesCondominio, id);
+    await refresh();
+  };
+
+  return { unidades, loading, create, update, remove, refresh };
+}
+
+// Hook para Cotizaciones
+export function useCotizaciones(agentId?: string) {
+  const [cotizaciones, setCotizaciones] = useState<Cotizacion[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const refresh = useCallback(async () => {
+    let data: Cotizacion[];
+    if (agentId) {
+      data = await dbManager.getByIndex<Cotizacion>(STORES.cotizaciones, 'agentId', agentId);
+    } else {
+      data = await dbManager.getAll<Cotizacion>(STORES.cotizaciones);
+    }
+    data.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+    setCotizaciones(data);
+    setLoading(false);
+  }, [agentId]);
+
+  useEffect(() => { refresh(); }, [refresh]);
+
+  const create = async (input: Omit<Cotizacion, 'id' | 'folio' | 'createdAt' | 'updatedAt'>): Promise<Cotizacion> => {
+    const folio = 'COT-' + Date.now().toString(36).toUpperCase();
+    const nueva: Cotizacion = { ...input, id: crypto.randomUUID(), folio, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+    await dbManager.put(STORES.cotizaciones, nueva);
+    await refresh();
+    return nueva;
+  };
+
+  const update = async (id: string, updates: Partial<Cotizacion>): Promise<void> => {
+    const existing = await dbManager.get<Cotizacion>(STORES.cotizaciones, id);
+    if (!existing) throw new Error('Cotización no encontrada');
+    await dbManager.put(STORES.cotizaciones, { ...existing, ...updates, updatedAt: new Date().toISOString() });
+    await refresh();
+  };
+
+  const remove = async (id: string): Promise<void> => {
+    await dbManager.delete(STORES.cotizaciones, id);
+    await refresh();
+  };
+
+  return { cotizaciones, loading, create, update, remove, refresh };
+}
+
+// Hook para Carta de Presentación (documento único por agente)
+export function useCartaPresentacion(agentId?: string) {
+  const [carta, setCarta] = useState<CartaPresentacion | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const refresh = useCallback(async () => {
+    if (agentId) {
+      const data = await dbManager.getByIndex<CartaPresentacion>(STORES.cartaPresentacion, 'agentId', agentId);
+      setCarta(data[0] || null);
+    } else {
+      setCarta(null);
+    }
+    setLoading(false);
+  }, [agentId]);
+
+  useEffect(() => { refresh(); }, [refresh]);
+
+  const save = async (updates: Partial<Omit<CartaPresentacion, 'id' | 'agentId'>>): Promise<CartaPresentacion> => {
+    if (!agentId) throw new Error('agentId requerido');
+    const existing = carta || (await dbManager.getByIndex<CartaPresentacion>(STORES.cartaPresentacion, 'agentId', agentId))[0];
+    const saved: CartaPresentacion = existing
+      ? { ...existing, ...updates, updatedAt: new Date().toISOString() }
+      : { id: crypto.randomUUID(), agentId, titulo: '', cuerpo: '', incluirLogo: true, ...updates, updatedAt: new Date().toISOString() };
+    await dbManager.put(STORES.cartaPresentacion, saved);
+    await refresh();
+    return saved;
+  };
+
+  return { carta, loading, save, refresh };
+}
+
+// Hook para Contratos
+export function useContratos(agentId?: string) {
+  const [contratos, setContratos] = useState<Contrato[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const refresh = useCallback(async () => {
+    let data: Contrato[];
+    if (agentId) {
+      data = await dbManager.getByIndex<Contrato>(STORES.contratos, 'agentId', agentId);
+    } else {
+      data = await dbManager.getAll<Contrato>(STORES.contratos);
+    }
+    data.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+    setContratos(data);
+    setLoading(false);
+  }, [agentId]);
+
+  useEffect(() => { refresh(); }, [refresh]);
+
+  const create = async (input: Omit<Contrato, 'id' | 'createdAt' | 'updatedAt'>): Promise<Contrato> => {
+    const nuevo: Contrato = { ...input, id: crypto.randomUUID(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+    await dbManager.put(STORES.contratos, nuevo);
+    await refresh();
+    return nuevo;
+  };
+
+  const update = async (id: string, updates: Partial<Contrato>): Promise<void> => {
+    const existing = await dbManager.get<Contrato>(STORES.contratos, id);
+    if (!existing) throw new Error('Contrato no encontrado');
+    await dbManager.put(STORES.contratos, { ...existing, ...updates, updatedAt: new Date().toISOString() });
+    await refresh();
+  };
+
+  const remove = async (id: string): Promise<void> => {
+    await dbManager.delete(STORES.contratos, id);
+    await refresh();
+  };
+
+  return { contratos, loading, create, update, remove, refresh };
+}
+
+// Hook para Fianzas
+export function useFianzas(agentId?: string) {
+  const [fianzas, setFianzas] = useState<Fianza[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const refresh = useCallback(async () => {
+    let data: Fianza[];
+    if (agentId) {
+      data = await dbManager.getByIndex<Fianza>(STORES.fianzas, 'agentId', agentId);
+    } else {
+      data = await dbManager.getAll<Fianza>(STORES.fianzas);
+    }
+    data.sort((a, b) => new Date(a.fechaVencimiento).getTime() - new Date(b.fechaVencimiento).getTime());
+    setFianzas(data);
+    setLoading(false);
+  }, [agentId]);
+
+  useEffect(() => { refresh(); }, [refresh]);
+
+  const create = async (input: Omit<Fianza, 'id' | 'createdAt' | 'updatedAt'>): Promise<Fianza> => {
+    const nueva: Fianza = { ...input, id: crypto.randomUUID(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+    await dbManager.put(STORES.fianzas, nueva);
+    await refresh();
+    return nueva;
+  };
+
+  const update = async (id: string, updates: Partial<Fianza>): Promise<void> => {
+    const existing = await dbManager.get<Fianza>(STORES.fianzas, id);
+    if (!existing) throw new Error('Fianza no encontrada');
+    await dbManager.put(STORES.fianzas, { ...existing, ...updates, updatedAt: new Date().toISOString() });
+    await refresh();
+  };
+
+  const remove = async (id: string): Promise<void> => {
+    await dbManager.delete(STORES.fianzas, id);
+    await refresh();
+  };
+
+  return { fianzas, loading, create, update, remove, refresh };
+}
+
+// Hook para Anuncios Airbnb (listings enlazados/scrapeados)
+export function useAirbnbListings(agentId?: string) {
+  const [listings, setListings] = useState<AirbnbListing[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const refresh = useCallback(async () => {
+    let data: AirbnbListing[];
+    if (agentId) {
+      data = await dbManager.getByIndex<AirbnbListing>(STORES.airbnbListings, 'agentId', agentId);
+    } else {
+      data = await dbManager.getAll<AirbnbListing>(STORES.airbnbListings);
+    }
+    data.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+    setListings(data);
+    setLoading(false);
+  }, [agentId]);
+
+  useEffect(() => { refresh(); }, [refresh]);
+
+  const create = async (input: Omit<AirbnbListing, 'id' | 'createdAt' | 'updatedAt'>): Promise<AirbnbListing> => {
+    const nuevo: AirbnbListing = { ...input, id: crypto.randomUUID(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+    await dbManager.put(STORES.airbnbListings, nuevo);
+    await refresh();
+    return nuevo;
+  };
+
+  const update = async (id: string, updates: Partial<AirbnbListing>): Promise<void> => {
+    const existing = await dbManager.get<AirbnbListing>(STORES.airbnbListings, id);
+    if (!existing) throw new Error('Listing no encontrado');
+    await dbManager.put(STORES.airbnbListings, { ...existing, ...updates, updatedAt: new Date().toISOString() });
+    await refresh();
+  };
+
+  const remove = async (id: string): Promise<void> => {
+    await dbManager.delete(STORES.airbnbListings, id);
+    await refresh();
+  };
+
+  return { listings, loading, create, update, remove, refresh };
+}
+
+// Hook para Mensajes Airbnb (por listing)
+export function useAirbnbMensajes(listingId?: string) {
+  const [mensajes, setMensajes] = useState<AirbnbMensaje[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const refresh = useCallback(async () => {
+    if (!listingId) { setMensajes([]); setLoading(false); return; }
+    const data = await dbManager.getByIndex<AirbnbMensaje>(STORES.airbnbMensajes, 'listingId', listingId);
+    data.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    setMensajes(data);
+    setLoading(false);
+  }, [listingId]);
+
+  useEffect(() => { refresh(); }, [refresh]);
+
+  const send = async (input: Omit<AirbnbMensaje, 'id' | 'createdAt'>): Promise<AirbnbMensaje> => {
+    const nuevo: AirbnbMensaje = { ...input, id: crypto.randomUUID(), createdAt: new Date().toISOString() };
+    await dbManager.put(STORES.airbnbMensajes, nuevo);
+    await refresh();
+    return nuevo;
+  };
+
+  return { mensajes, loading, send, refresh };
+}
+
+// Hook para Reservas Airbnb (por listing)
+export function useAirbnbReservas(listingId?: string) {
+  const [reservas, setReservas] = useState<AirbnbReserva[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const refresh = useCallback(async () => {
+    let data: AirbnbReserva[];
+    if (listingId) {
+      data = await dbManager.getByIndex<AirbnbReserva>(STORES.airbnbReservas, 'listingId', listingId);
+    } else {
+      data = await dbManager.getAll<AirbnbReserva>(STORES.airbnbReservas);
+    }
+    data.sort((a, b) => new Date(b.checkIn).getTime() - new Date(a.checkIn).getTime());
+    setReservas(data);
+    setLoading(false);
+  }, [listingId]);
+
+  useEffect(() => { refresh(); }, [refresh]);
+
+  const create = async (input: Omit<AirbnbReserva, 'id' | 'createdAt'>): Promise<AirbnbReserva> => {
+    const nueva: AirbnbReserva = { ...input, id: crypto.randomUUID(), createdAt: new Date().toISOString() };
+    await dbManager.put(STORES.airbnbReservas, nueva);
+    await refresh();
+    return nueva;
+  };
+
+  const update = async (id: string, updates: Partial<AirbnbReserva>): Promise<void> => {
+    const existing = await dbManager.get<AirbnbReserva>(STORES.airbnbReservas, id);
+    if (!existing) throw new Error('Reserva no encontrada');
+    await dbManager.put(STORES.airbnbReservas, { ...existing, ...updates });
+    await refresh();
+  };
+
+  const remove = async (id: string): Promise<void> => {
+    await dbManager.delete(STORES.airbnbReservas, id);
+    await refresh();
+  };
+
+  return { reservas, loading, create, update, remove, refresh };
+}
+
+// Hook para Precios Dinámicos Airbnb (calendario de precios por fecha, por listing)
+export function useAirbnbPrecios(listingId?: string) {
+  const [precios, setPrecios] = useState<AirbnbPrecio[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const refresh = useCallback(async () => {
+    if (!listingId) { setPrecios([]); setLoading(false); return; }
+    const data = await dbManager.getByIndex<AirbnbPrecio>(STORES.airbnbPrecios, 'listingId', listingId);
+    data.sort((a, b) => a.fecha.localeCompare(b.fecha));
+    setPrecios(data);
+    setLoading(false);
+  }, [listingId]);
+
+  useEffect(() => { refresh(); }, [refresh]);
+
+  const setPrecio = async (fecha: string, precio: number): Promise<void> => {
+    if (!listingId) throw new Error('listingId requerido');
+    const existing = precios.find(p => p.fecha === fecha)
+      || (await dbManager.getByIndex<AirbnbPrecio>(STORES.airbnbPrecios, 'listingId', listingId)).find(p => p.fecha === fecha);
+    const saved: AirbnbPrecio = existing ? { ...existing, precio } : { id: crypto.randomUUID(), listingId, fecha, precio };
+    await dbManager.put(STORES.airbnbPrecios, saved);
+    await refresh();
+  };
+
+  const remove = async (id: string): Promise<void> => {
+    await dbManager.delete(STORES.airbnbPrecios, id);
+    await refresh();
+  };
+
+  return { precios, loading, setPrecio, remove, refresh };
+}
+
+// Hook para catálogo personalizable de Tipos de Propiedad
+export function useTiposPropiedadCustom(agentId?: string) {
+  const [tipos, setTipos] = useState<TipoPropiedadCustom[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const refresh = useCallback(async () => {
+    let data: TipoPropiedadCustom[];
+    if (agentId) {
+      data = await dbManager.getByIndex<TipoPropiedadCustom>(STORES.tiposPropiedadCustom, 'agentId', agentId);
+    } else {
+      data = await dbManager.getAll<TipoPropiedadCustom>(STORES.tiposPropiedadCustom);
+    }
+    data.sort((a, b) => a.label.localeCompare(b.label));
+    setTipos(data);
+    setLoading(false);
+  }, [agentId]);
+
+  useEffect(() => { refresh(); }, [refresh]);
+
+  const create = async (agentId: string, label: string): Promise<TipoPropiedadCustom> => {
+    const nuevo: TipoPropiedadCustom = { id: crypto.randomUUID(), agentId, label, createdAt: new Date().toISOString() };
+    await dbManager.put(STORES.tiposPropiedadCustom, nuevo);
+    await refresh();
+    return nuevo;
+  };
+
+  const remove = async (id: string): Promise<void> => {
+    await dbManager.delete(STORES.tiposPropiedadCustom, id);
+    await refresh();
+  };
+
+  return { tipos, loading, create, remove, refresh };
+}
+
+// Hook para catálogo personalizable de Amenidades
+export function useAmenidadesCatalogo(agentId?: string) {
+  const [amenidades, setAmenidades] = useState<AmenidadCatalogo[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const refresh = useCallback(async () => {
+    let data: AmenidadCatalogo[];
+    if (agentId) {
+      data = await dbManager.getByIndex<AmenidadCatalogo>(STORES.amenidadesCatalogo, 'agentId', agentId);
+    } else {
+      data = await dbManager.getAll<AmenidadCatalogo>(STORES.amenidadesCatalogo);
+    }
+    data.sort((a, b) => a.label.localeCompare(b.label));
+    setAmenidades(data);
+    setLoading(false);
+  }, [agentId]);
+
+  useEffect(() => { refresh(); }, [refresh]);
+
+  const create = async (agentId: string, label: string): Promise<AmenidadCatalogo> => {
+    const nuevo: AmenidadCatalogo = { id: crypto.randomUUID(), agentId, label, createdAt: new Date().toISOString() };
+    await dbManager.put(STORES.amenidadesCatalogo, nuevo);
+    await refresh();
+    return nuevo;
+  };
+
+  const remove = async (id: string): Promise<void> => {
+    await dbManager.delete(STORES.amenidadesCatalogo, id);
+    await refresh();
+  };
+
+  return { amenidades, loading, create, remove, refresh };
 }
 
 export default dbManager;
