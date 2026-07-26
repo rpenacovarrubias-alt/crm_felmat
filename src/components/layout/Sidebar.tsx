@@ -250,7 +250,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
         </div>
       </div>
 
-      <ScrollArea className="flex-1 py-4 h-[calc(100vh-8rem)] overflow-y-auto">
+      <ScrollArea className="flex-1 py-4 overflow-y-auto">
         {/* Dashboard */}
         <nav className="px-3 space-y-1 mb-2">
           <Link
@@ -271,62 +271,11 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
         </nav>
 
         {/* Propiedades Group */}
-        {!isCollapsed ? (
-          <Collapsible open={isPropertiesActive} onOpenChange={() => {}}>
-            <CollapsibleTrigger asChild>
-              <button
-                className={cn(
-                  "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 mx-3",
-                  "hover:bg-accent hover:text-accent-foreground",
-                  isPropertiesActive
-                    ? "bg-primary/10 text-primary"
-                    : "text-muted-foreground"
-                )}
-              >
-                <propertiesGroup.icon className="w-5 h-5 flex-shrink-0" />
-                <span className="flex-1 text-left">{propertiesGroup.label}</span>
-                <ChevronDown className={cn("w-4 h-4 transition-transform", isPropertiesActive && "rotate-180")} />
-              </button>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <nav className="px-3 space-y-1 mt-1 ml-4 border-l-2 border-border/50">
-                {propertiesGroup.items.map((item) => (
-                  <Link
-                    key={item.href}
-                    to={item.href}
-                    onClick={onItemClick}
-                    className={cn(
-                      "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200",
-                      "hover:bg-accent hover:text-accent-foreground",
-                      location.pathname.startsWith(item.href)
-                        ? "text-primary font-medium"
-                        : "text-muted-foreground"
-                    )}
-                  >
-                    <item.icon className="w-4 h-4 flex-shrink-0" />
-                    <span>{item.label}</span>
-                  </Link>
-                ))}
-              </nav>
-            </CollapsibleContent>
-          </Collapsible>
-        ) : (
-          <nav className="px-3 space-y-1 mb-2">
-            <Link
-              to="/propiedades"
-              className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
-                "hover:bg-accent hover:text-accent-foreground",
-                isPropertiesActive
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-muted-foreground",
-                "justify-center px-2"
-              )}
-            >
-              <propertiesGroup.icon className="w-5 h-5 flex-shrink-0" />
-            </Link>
-          </nav>
-        )}
+        <NavGroupComponent
+          group={propertiesGroup}
+          isCollapsed={isCollapsed}
+          isActive={isPropertiesActive}
+        />
 
         {/* Admin Condominios Group */}
         <div className="mt-2">
