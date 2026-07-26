@@ -271,11 +271,13 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
         </nav>
 
         {/* Propiedades Group */}
-        <NavGroupComponent
-          group={propertiesGroup}
-          isCollapsed={isCollapsed}
-          isActive={isPropertiesActive}
-        />
+        <div className="mt-2">
+          <NavGroupComponent
+            group={propertiesGroup}
+            isCollapsed={isCollapsed}
+            isActive={isPropertiesActive}
+          />
+        </div>
 
         {/* Admin Condominios Group */}
         <div className="mt-2">
