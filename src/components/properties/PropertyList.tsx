@@ -103,7 +103,7 @@ function PropertyCard({ property, viewMode, onShare, onDelete, canEdit, canDelet
       <Card className="hover:shadow-md transition-shadow">
         <CardContent className="p-4">
           <div className="flex gap-4">
-            <div className="w-32 h-24 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+            <Link to={`/propiedades/${property.id}`} className="w-32 h-24 rounded-lg overflow-hidden bg-muted flex-shrink-0 block">
               {mainImage ? (
                 <img src={mainImage} alt={property.title} className="w-full h-full object-cover" />
               ) : (
@@ -111,11 +111,13 @@ function PropertyCard({ property, viewMode, onShare, onDelete, canEdit, canDelet
                   <Home className="w-8 h-8 text-muted-foreground" />
                 </div>
               )}
-            </div>
+            </Link>
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <h3 className="font-semibold truncate">{property.title}</h3>
+                  <Link to={`/propiedades/${property.id}`}>
+                    <h3 className="font-semibold truncate hover:underline">{property.title}</h3>
+                  </Link>
                   <p className="text-sm text-muted-foreground flex items-center gap-1">
                     <MapPin className="w-3 h-3" />
                     {property.location.city}, {property.location.neighborhood}
@@ -199,17 +201,19 @@ function PropertyCard({ property, viewMode, onShare, onDelete, canEdit, canDelet
   return (
     <Card className="hover:shadow-lg transition-shadow overflow-hidden group">
       <div className="relative aspect-[4/3] overflow-hidden bg-muted">
-        {mainImage ? (
-          <img 
-            src={mainImage} 
-            alt={property.title} 
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <Home className="w-12 h-12 text-muted-foreground" />
-          </div>
-        )}
+        <Link to={`/propiedades/${property.id}`} className="block w-full h-full">
+          {mainImage ? (
+            <img
+              src={mainImage}
+              alt={property.title}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <Home className="w-12 h-12 text-muted-foreground" />
+            </div>
+          )}
+        </Link>
         <div className="absolute top-3 left-3 flex gap-2">
           <Badge className={cn("text-white", getStatusColor(property.status))}>
             {getStatusLabel(property.status)}
@@ -258,7 +262,9 @@ function PropertyCard({ property, viewMode, onShare, onDelete, canEdit, canDelet
         </div>
       </div>
       <CardContent className="p-4">
-        <h3 className="font-semibold line-clamp-1 mb-1">{property.title}</h3>
+        <Link to={`/propiedades/${property.id}`}>
+          <h3 className="font-semibold line-clamp-1 mb-1 hover:underline">{property.title}</h3>
+        </Link>
         <p className="text-sm text-muted-foreground flex items-center gap-1 mb-3">
           <MapPin className="w-3 h-3" />
           {property.location.city}, {property.location.neighborhood}
