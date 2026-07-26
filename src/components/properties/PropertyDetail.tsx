@@ -1287,8 +1287,8 @@ function ShareDialog({
 export function PropertyDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { properties, remove } = useProperties(user?.id);
+  const { user, canViewAllProperties } = useAuth();
+  const { properties, remove } = useProperties(canViewAllProperties ? undefined : user?.id);
   const [shareOpen, setShareOpen] = useState(false);
   const [templatesOpen, setTemplatesOpen] = useState(false);
   const [statsOpen, setStatsOpen] = useState(false);

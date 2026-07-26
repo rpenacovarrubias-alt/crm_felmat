@@ -216,8 +216,8 @@ function ImageUploader({
 export function PropertyForm() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const { user } = useAuth();
-  const { properties, create, update } = useProperties(user?.id);
+  const { user, canViewAllProperties } = useAuth();
+  const { properties, create, update } = useProperties(canViewAllProperties ? undefined : user?.id);
   
   const isEditing = !!id;
   const existingProperty = isEditing ? properties.find(p => p.id === id) : null;
