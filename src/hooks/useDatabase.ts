@@ -666,6 +666,20 @@ export function useAgentWebsite(agentId?: string) {
   return { website, loading, create, update, refresh };
 }
 
+// Hook para buscar el sitio web público de un agente por subdominio (sin sesión iniciada)
+export function useAgentWebsiteBySubdomain(subdomain?: string) {
+  const [website, setWebsite] = useState<AgentWebsite | null | undefined>(undefined);
+
+  useEffect(() => {
+    if (!subdomain) return;
+    dbManager.getAll<AgentWebsite>(STORES.agentWebsites).then(all => {
+      setWebsite(all.find(w => w.subdomain === subdomain) || null);
+    });
+  }, [subdomain]);
+
+  return { website, loading: website === undefined };
+}
+
 // Genera un slug único para una lista pública
 function generateListSlug(name: string): string {
   return name

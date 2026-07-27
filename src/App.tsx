@@ -20,6 +20,7 @@ const SharedLists = lazy(() => import('@/components/lists/SharedLists'));
 const PublicList = lazy(() => import('@/components/lists/PublicList'));
 const TarjetaDigitalPage = lazy(() => import('@/components/tarjeta-digital/TarjetaDigitalPage'));
 const AgentCard = lazy(() => import('@/components/tarjeta-digital/AgentCard'));
+const PublicWebsite = lazy(() => import('@/components/website/PublicWebsite'));
 const LeadList = lazy(() => import('@/components/leads/LeadList'));
 const LeadForm = lazy(() => import('@/components/leads/LeadForm'));
 const ImportarLeadsPage = lazy(() => import('@/components/leads/ImportarLeadsPage'));
@@ -77,6 +78,7 @@ function AppRoutes() {
         <Route path="/login" element={<Login />} />
         <Route path="/lista/:slug" element={<PublicList />} />
         <Route path="/agente/:slug" element={<AgentCard />} />
+        <Route path="/sitio/:subdomain" element={<PublicWebsite />} />
         
         {/* Protected routes */}
         <Route element={<ProtectedRoute />}>

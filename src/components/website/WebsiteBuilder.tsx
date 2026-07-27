@@ -72,7 +72,7 @@ function WebsitePreview({ config }: { config: Partial<AgentWebsite> }) {
         <div className="flex-1 text-center">
           <div className="inline-flex items-center gap-2 bg-white px-3 py-1 rounded text-xs text-muted-foreground">
             <Globe className="w-3 h-3" />
-            {config.subdomain}.proptech.com
+{window.location.host}/sitio/{config.subdomain}
           </div>
         </div>
       </div>
@@ -224,8 +224,8 @@ export function WebsiteBuilder() {
     }
   };
 
-  const websiteUrl = formData.subdomain 
-    ? `https://${formData.subdomain}.proptech.com`
+  const websiteUrl = formData.subdomain
+    ? `${window.location.origin}/sitio/${formData.subdomain}`
     : null;
 
   return (
