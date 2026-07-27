@@ -21,6 +21,7 @@ const PublicList = lazy(() => import('@/components/lists/PublicList'));
 const TarjetaDigitalPage = lazy(() => import('@/components/tarjeta-digital/TarjetaDigitalPage'));
 const AgentCard = lazy(() => import('@/components/tarjeta-digital/AgentCard'));
 const PublicWebsite = lazy(() => import('@/components/website/PublicWebsite'));
+const BolsaPage = lazy(() => import('@/components/bolsa/BolsaPage'));
 const LeadList = lazy(() => import('@/components/leads/LeadList'));
 const LeadForm = lazy(() => import('@/components/leads/LeadForm'));
 const ImportarLeadsPage = lazy(() => import('@/components/leads/ImportarLeadsPage'));
@@ -99,6 +100,7 @@ function AppRoutes() {
             <Route path="/vinculaciones" element={<VinculacionesPage />} />
             <Route path="/listas-compartidas" element={<SharedLists />} />
             <Route path="/tarjeta-digital" element={<TarjetaDigitalPage />} />
+            <Route path="/bolsa" element={<BolsaPage />} />
             
             {/* Leads */}
             <Route path="/leads" element={<LeadList />} />

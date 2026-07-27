@@ -50,6 +50,7 @@ import {
   ClipboardList,
   Sparkles,
   IdCard,
+  Search,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -74,6 +75,7 @@ interface NavGroup {
 
 // Menús principales
 const dashboardItem: NavItem = { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard };
+const bolsaItem: NavItem = { label: 'Bolsa', href: '/bolsa', icon: Search };
 
 // Grupo de Propiedades con submenús
 const propertiesGroup: NavGroup = {
@@ -269,6 +271,25 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
           >
             <dashboardItem.icon className="w-5 h-5 flex-shrink-0" />
             {!isCollapsed && <span>{dashboardItem.label}</span>}
+          </Link>
+        </nav>
+
+        {/* Bolsa */}
+        <nav className="px-3 space-y-1 mb-2">
+          <Link
+            to={bolsaItem.href}
+            onClick={onItemClick}
+            className={cn(
+              "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
+              "hover:bg-accent hover:text-accent-foreground",
+              location.pathname === bolsaItem.href
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground",
+              isCollapsed && "justify-center px-2"
+            )}
+          >
+            <bolsaItem.icon className="w-5 h-5 flex-shrink-0" />
+            {!isCollapsed && <span>{bolsaItem.label}</span>}
           </Link>
         </nav>
 
