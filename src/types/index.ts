@@ -51,6 +51,8 @@ export interface AgentConfig {
     slug: string;
     hiddenPropertyIds?: string[];
   };
+  // Portales de clasificados marcados como vinculados (solo registro, sin publicación real)
+  linkedPortals?: string[];
 }
 
 // Agencia/Inmobiliaria
