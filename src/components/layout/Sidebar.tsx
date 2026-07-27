@@ -49,6 +49,7 @@ import {
   TrendingUp as Trending,
   ClipboardList,
   Sparkles,
+  IdCard,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -126,6 +127,7 @@ const mainNavItems: NavItem[] = [
   { label: 'Clientes', href: '/leads', icon: Users },
   { label: 'Calendario', href: '/calendario', icon: Calendar },
   { label: 'Mi Sitio Web', href: '/sitio-web', icon: Globe },
+  { label: 'Tarjeta Digital', href: '/tarjeta-digital', icon: IdCard },
 ];
 
 const adminNavItems: NavItem[] = [

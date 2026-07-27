@@ -46,6 +46,11 @@ export interface AgentConfig {
     showCertificate: boolean;
     showEmail: boolean;
   };
+  // Tarjeta digital pública
+  digitalCard?: {
+    slug: string;
+    hiddenPropertyIds?: string[];
+  };
 }
 
 // Agencia/Inmobiliaria

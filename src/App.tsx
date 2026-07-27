@@ -18,6 +18,8 @@ const EstimacionesPage = lazy(() => import('@/components/estimaciones/Estimacion
 const PropertyPerformance = lazy(() => import('@/components/properties/PropertyPerformance'));
 const SharedLists = lazy(() => import('@/components/lists/SharedLists'));
 const PublicList = lazy(() => import('@/components/lists/PublicList'));
+const TarjetaDigitalPage = lazy(() => import('@/components/tarjeta-digital/TarjetaDigitalPage'));
+const AgentCard = lazy(() => import('@/components/tarjeta-digital/AgentCard'));
 const LeadList = lazy(() => import('@/components/leads/LeadList'));
 const LeadForm = lazy(() => import('@/components/leads/LeadForm'));
 const ImportarLeadsPage = lazy(() => import('@/components/leads/ImportarLeadsPage'));
@@ -74,6 +76,7 @@ function AppRoutes() {
         {/* Public routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/lista/:slug" element={<PublicList />} />
+        <Route path="/agente/:slug" element={<AgentCard />} />
         
         {/* Protected routes */}
         <Route element={<ProtectedRoute />}>
@@ -93,6 +96,7 @@ function AppRoutes() {
             <Route path="/estimaciones" element={<EstimacionesPage />} />
             <Route path="/vinculaciones" element={<VinculacionesPage />} />
             <Route path="/listas-compartidas" element={<SharedLists />} />
+            <Route path="/tarjeta-digital" element={<TarjetaDigitalPage />} />
             
             {/* Leads */}
             <Route path="/leads" element={<LeadList />} />
