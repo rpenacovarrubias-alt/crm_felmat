@@ -5,8 +5,8 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { useProperties } from '@/hooks/useDatabase';
-import type { Property, PropertyStatus, TransactionType } from '@/types';
+import { useProperties, useUsers, useLeads } from '@/hooks/useDatabase';
+import type { Property, PropertyStatus, TransactionType, User } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -61,9 +61,12 @@ interface PropertyCardProps {
   onDelete: (id: string) => void;
   canEdit: boolean;
   canDelete: boolean;
+  agent?: User;
+  leadsCount: number;
 }
 
-function PropertyCard({ property, viewMode, onShare, onDelete, canEdit, canDelete }: PropertyCardProps) {
+function PropertyCard({ property, viewMode, onShare, onDelete, canEdit, canDelete, agent, leadsCount }: PropertyCardProps) {
+  const agentInitials = agent ? `${agent.name.charAt(0)}${agent.lastName.charAt(0)}`.toUpperCase() : '';
   const getStatusColor = (status: PropertyStatus) => {
     switch (status) {
       case 'disponible': return 'bg-green-500 hover:bg-green-600';
@@ -187,10 +190,23 @@ function PropertyCard({ property, viewMode, onShare, onDelete, canEdit, canDelet
                 <p className="text-lg font-bold text-primary">
                   ${property.price.toLocaleString('es-MX')} {property.priceCurrency}
                 </p>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                  {leadsCount > 0 && (
+                    <Badge variant="secondary" className="text-xs">
+                      {leadsCount} prospecto{leadsCount !== 1 ? 's' : ''}
+                    </Badge>
+                  )}
                   <span>Vistas: {property.views}</span>
                 </div>
               </div>
+              {agent && (
+                <div className="flex items-center gap-2 mt-2">
+                  <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-primary text-[10px] font-semibold flex-shrink-0">
+                    {agentInitials}
+                  </div>
+                  <span className="text-xs text-muted-foreground truncate">{agent.name} {agent.lastName}</span>
+                </div>
+              )}
             </div>
           </div>
         </CardContent>
@@ -290,10 +306,23 @@ function PropertyCard({ property, viewMode, onShare, onDelete, canEdit, canDelet
           <p className="text-lg font-bold text-primary">
             ${property.price.toLocaleString('es-MX')}
           </p>
-          <div className="flex items-center gap-1 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            {leadsCount > 0 && (
+              <Badge variant="secondary" className="text-xs">
+                {leadsCount} prospecto{leadsCount !== 1 ? 's' : ''}
+              </Badge>
+            )}
             <span>Vistas: {property.views}</span>
           </div>
         </div>
+        {agent && (
+          <div className="flex items-center gap-2 mt-2">
+            <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-primary text-[10px] font-semibold flex-shrink-0">
+              {agentInitials}
+            </div>
+            <span className="text-xs text-muted-foreground truncate">{agent.name} {agent.lastName}</span>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
@@ -363,6 +392,14 @@ function ShareDialog({ property, open, onClose }: { property: Property | null; o
 export function PropertyList() {
   const { user, isAdmin, canViewAllProperties, canEditProperty, canDeleteProperty } = useAuth();
   const { properties, loading, remove } = useProperties(canViewAllProperties ? undefined : user?.id);
+  const { users } = useUsers();
+  const { leads } = useLeads();
+  const agentById = new Map(users.map(u => [u.id, u]));
+  const leadsCountByProperty = new Map<string, number>();
+  for (const lead of leads) {
+    if (!lead.interestedPropertyId) continue;
+    leadsCountByProperty.set(lead.interestedPropertyId, (leadsCountByProperty.get(lead.interestedPropertyId) || 0) + 1);
+  }
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -513,6 +550,8 @@ export function PropertyList() {
               onDelete={handleDelete}
               canEdit={canEditProperty(property.agentId)}
               canDelete={canDeleteProperty(property.agentId)}
+              agent={agentById.get(property.agentId)}
+              leadsCount={leadsCountByProperty.get(property.id) || 0}
             />
           ))}
         </div>
