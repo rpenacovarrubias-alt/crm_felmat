@@ -14,6 +14,10 @@ export default function ProtectedRoute() {
   }
 
   if (!isAuthenticated) {
+    const propMatch = location.pathname.match(/^\/propiedades\/([^\/]+)$/);
+    if (propMatch && !['nueva', 'tipos', 'amenidades', 'desempeno'].includes(propMatch[1])) {
+      return <Navigate to={`/p/${propMatch[1]}`} replace />;
+    }
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 

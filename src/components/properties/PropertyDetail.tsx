@@ -310,7 +310,7 @@ function TemplatesDialog({
   const [leadName, setLeadName] = useState('');
   const [previewContent, setPreviewContent] = useState('');
 
-  const shareUrl = property ? `${window.location.origin}/p/${property.slug}` : '';
+  const shareUrl = property ? `${window.location.origin}/p/${property.slug || property.id}` : '';
 
   const categories = [
     { value: 'all', label: 'Todas' },
@@ -690,7 +690,7 @@ function QRDialog({
 
   useState(() => {
     if (property && open) {
-      const shareUrl = `${window.location.origin}/p/${property.slug}`;
+      const shareUrl = `${window.location.origin}/p/${property.slug || property.id}`;
       QRCode.toDataURL(shareUrl, {
         width: qrSize,
         margin: 2,
@@ -704,7 +704,7 @@ function QRDialog({
 
   useState(() => {
     if (property && open) {
-      const shareUrl = `${window.location.origin}/p/${property.slug}`;
+      const shareUrl = `${window.location.origin}/p/${property.slug || property.id}`;
       QRCode.toDataURL(shareUrl, {
         width: qrSize,
         margin: 2,
@@ -718,7 +718,7 @@ function QRDialog({
 
   if (!property) return null;
 
-  const shareUrl = `${window.location.origin}/p/${property.slug}`;
+  const shareUrl = `${window.location.origin}/p/${property.slug || property.id}`;
 
   const handleDownloadQR = () => {
     if (qrDataUrl) {
@@ -850,7 +850,7 @@ function ShareDialog({
 
   if (!property) return null;
 
-  const shareUrl = `${window.location.origin}/p/${property.slug}`;
+  const shareUrl = `${window.location.origin}/p/${property.slug || property.id}`;
   
   // Mensaje profesional para WhatsApp
   const generateWhatsAppMessage = () => {

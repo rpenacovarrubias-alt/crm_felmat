@@ -50,6 +50,7 @@ const ReportesVentasPage = lazy(() => import('@/components/reportes/ReportesVent
 const ReportesLeadsPage = lazy(() => import('@/components/reportes/ReportesLeadsPage'));
 const TiposPropiedadPage = lazy(() => import('@/components/propiedades/TiposPropiedadPage'));
 const AmenidadesPage = lazy(() => import('@/components/propiedades/AmenidadesPage'));
+const PublicPropertyPage = lazy(() => import('@/components/properties/PublicPropertyPage'));
 const VinculacionesPage = lazy(() => import('@/components/vinculaciones/VinculacionesPage'));
 
 // Placeholder simple para módulos en desarrollo
@@ -77,6 +78,9 @@ function AppRoutes() {
       <Routes>
         {/* Public routes */}
         <Route path="/login" element={<Login />} />
+        <Route path="/p/:slug" element={<PublicPropertyPage />} />
+        <Route path="/p/:id" element={<PublicPropertyPage />} />
+        <Route path="/propiedades/publica/:id" element={<PublicPropertyPage />} />
         <Route path="/lista/:slug" element={<PublicList />} />
         <Route path="/agente/:slug" element={<AgentCard />} />
         <Route path="/sitio/:subdomain" element={<PublicWebsite />} />

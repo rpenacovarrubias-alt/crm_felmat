@@ -341,7 +341,7 @@ export function useProperties(agentId?: string) {
 
   const getBySlug = async (slug: string): Promise<Property | null> => {
     const all = await dbManager.getAll<Property>(STORES.properties);
-    return all.find(p => p.slug === slug) || null;
+    return all.find(p => p.slug === slug || p.id === slug) || null;
   };
 
   return { properties, loading, create, update, remove, refresh, incrementViews, getBySlug };
