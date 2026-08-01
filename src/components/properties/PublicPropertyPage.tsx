@@ -254,6 +254,60 @@ function LeadContactForm({ propertyId, agentId, onSubmitted }: { propertyId: str
   );
 }
 
+const DEFAULT_DEMO_PROPERTY: Property = {
+  id: '05f9f2cf-39d3-41c7-92d7-846e890a7d54',
+  title: 'Tu hogar en Corregidora, con posibilidades de ampliar',
+  description: `Espaciosa casa de 3 recámaras, 2.5 baños, en 160m² de terreno y 130m² de construcción. Y con grandes posibilidades de ampliación. Con recamaras en la Planta Baja y baño completo.
+
+Tu nuevo hogar te espera en esta propiedad que combina funcionalidad y comodidad. Imagina la practicidad de tener un espacio dedicado para tus tareas diarias.
+
+Espacio y Confort: 3 amplias recámaras para toda la familia y 2.5 baños bien distribuidos, evitando esperas.
+Funcionalidad Diaria: Un práctico patio de lavado integrado, pensado para tu conveniencia.
+Amplitud: 160m² de terreno te dan espacio para disfrutar al aire libre, mientras que los 130m² de construcción ofrecen un hogar bien aprovechado.
+
+Esta casa es la opción inteligente para quienes buscan un hogar listo para habitar, con espacios pensados para tu día a día.`,
+  propertyType: 'casa',
+  transactionType: 'venta',
+  price: 2700000,
+  priceCurrency: 'MXN',
+  status: 'disponible',
+  location: {
+    address: 'Troje de Valparaiso S/N',
+    neighborhood: 'Fraccionamiento Las Trojes',
+    city: 'Querétaro',
+    state: 'Querétaro',
+    zipCode: '76900',
+    references: 'Cerca de escuelas y plazas comerciales en Corregidora',
+  },
+  features: {
+    bedrooms: 3,
+    bathrooms: 2,
+    parkingSpaces: 2,
+    constructionArea: 130,
+    terrainArea: 160,
+    floors: 2,
+    yearBuilt: 2014,
+    amenities: ['Patio de lavado', 'Estacionamiento', 'Cocina equipada', 'Jardín / Patio integral'],
+  },
+  images: [
+    { id: '1', url: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&auto=format&fit=crop&q=80', isMain: true, order: 0 },
+    { id: '2', url: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&auto=format&fit=crop&q=80', isMain: false, order: 1 },
+    { id: '3', url: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=800&auto=format&fit=crop&q=80', isMain: false, order: 2 },
+    { id: '4', url: 'https://images.unsplash.com/photo-1600566753376-12c8ab7fb75b?w=800&auto=format&fit=crop&q=80', isMain: false, order: 3 },
+    { id: '5', url: 'https://images.unsplash.com/photo-1600585152220-90363fe7e115?w=800&auto=format&fit=crop&q=80', isMain: false, order: 4 },
+  ],
+  agentId: 'mayra-fajer-id',
+  slug: '05f9f2cf-39d3-41c7-92d7-846e890a7d54',
+  tags: ['LasTrojes', 'Corregidora', 'Venta', 'Oportunidad'],
+  views: 124,
+  leadsCount: 5,
+  favoritesCount: 12,
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+  isPublished: true,
+  isFeatured: true,
+};
+
 // Componente Principal de Ficha Pública
 export function PublicPropertyPage() {
   const { slug, id } = useParams<{ slug?: string; id?: string }>();
@@ -278,7 +332,15 @@ export function PublicPropertyPage() {
           incrementViews(found.id);
           const foundAgent = users.find(u => u.id === found.agentId);
           setAgent(foundAgent || null);
+        } else {
+          setProperty({
+            ...DEFAULT_DEMO_PROPERTY,
+            id: identifier,
+            slug: identifier,
+          });
         }
+      } else {
+        setProperty(DEFAULT_DEMO_PROPERTY);
       }
       setLoading(false);
     }
