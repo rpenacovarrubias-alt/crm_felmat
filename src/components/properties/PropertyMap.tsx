@@ -32,9 +32,11 @@ export function PropertyMap({
 
   // Construir dirección completa
   const fullAddress = `${address}, ${city}, ${state}${zipCode ? ` ${zipCode}` : ''}, ${country}`;
-  
-  // URL de Google Maps Embed
-  const mapUrl = `https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1000!2d-99.1332!3d19.4326!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMTnCsDI1JzU3LjQiTiA5OcKwMDcnNTYuMyJX!5e0!3m2!1ses!2smx!4v1`;
+
+  // URL de Google Maps Embed dinámico (sin API key): busca la dirección real
+  // en vez de un lugar fijo. Antes esto apuntaba siempre al Zócalo de CDMX
+  // sin importar la propiedad -- pb= era un embed generado una sola vez a mano.
+  const mapUrl = `https://www.google.com/maps?q=${encodeURIComponent(fullAddress)}&output=embed`;
   
   // URL de Google Maps para abrir en nueva pestaña
   const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`;

@@ -853,28 +853,31 @@ function ShareDialog({
   const shareUrl = `${window.location.origin}/p/${property.slug || property.id}`;
   
   // Mensaje profesional para WhatsApp
+  // Nota: sin emoji de plano suplementario (🏠📍💰...) -- wa.me/api.whatsapp.com
+  // los corrompe en su redirección (confirmado: llegan bien codificados hasta
+  // encodeURIComponent, se rompen del lado de WhatsApp). Solo texto + *negritas*.
   const generateWhatsAppMessage = () => {
-    let message = `🏠 *${property.title}*\n\n`;
-    message += `💰 *Precio:* $${property.price.toLocaleString('es-MX')} ${property.priceCurrency}\n`;
-    message += `📍 *Ubicación:* ${property.location.city}, ${property.location.neighborhood}\n`;
-    message += `🛏️ *Recámaras:* ${property.features.bedrooms} | 🚿 *Baños:* ${property.features.bathrooms}\n`;
-    message += `🚗 *Estacionamientos:* ${property.features.parkingSpaces}\n\n`;
-    message += `📋 Ver ficha completa aquí:\n${shareUrl}\n\n`;
-    
+    let message = `*${property.title}*\n\n`;
+    message += `*Precio:* $${property.price.toLocaleString('es-MX')} ${property.priceCurrency}\n`;
+    message += `*Ubicación:* ${property.location.city}, ${property.location.neighborhood}\n`;
+    message += `*Recámaras:* ${property.features.bedrooms} | *Baños:* ${property.features.bathrooms}\n`;
+    message += `*Estacionamientos:* ${property.features.parkingSpaces}\n\n`;
+    message += `Ver ficha completa aquí:\n${shareUrl}\n\n`;
+
     if (showAgentData && user) {
-      message += `---\n👤 *Contacto:*\n`;
+      message += `---\n*Contacto:*\n`;
       if (showName) message += `${user.name} ${user.lastName}\n`;
       if (showCertificate && user.config?.certificateNumber) {
-        message += `✅ Certificado: ${user.config.certificateNumber}\n`;
+        message += `Certificado: ${user.config.certificateNumber}\n`;
       }
       if (showWhatsApp && user.config?.whatsappNumber) {
-        message += `📱 WhatsApp: ${user.config.whatsappNumber}\n`;
+        message += `WhatsApp: ${user.config.whatsappNumber}\n`;
       }
-      if (showPhone) message += `☎️ Tel: ${user.phone}\n`;
-      if (showEmail) message += `📧 ${user.email}\n`;
+      if (showPhone) message += `Tel: ${user.phone}\n`;
+      if (showEmail) message += `${user.email}\n`;
     }
-    
-    message += `\n💬 ¿Te interesa? ¡Contáctame!`;
+
+    message += `\n¿Te interesa? ¡Contáctame!`;
     return message;
   };
 

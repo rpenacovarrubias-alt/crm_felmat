@@ -388,7 +388,9 @@ export function PublicPropertyPage() {
   };
 
   const handleWhatsAppShare = () => {
-    const text = `🏠 *${property.title}*\n💰 Precio: $${property.price.toLocaleString('es-MX')} ${property.priceCurrency}\n📍 Ubicación: ${property.location.city}, ${property.location.neighborhood || ''}\n\n📋 Ver ficha completa:\n${shareUrl}\n\n👤 Asesor: ${agentName} (${agentPhone})`;
+    // Sin emoji de plano suplementario: wa.me/api.whatsapp.com los corrompe
+    // en su redirección aunque lleguen bien codificados desde el navegador.
+    const text = `*${property.title}*\nPrecio: $${property.price.toLocaleString('es-MX')} ${property.priceCurrency}\nUbicación: ${property.location.city}, ${property.location.neighborhood || ''}\n\nVer ficha completa:\n${shareUrl}\n\nAsesor: ${agentName} (${agentPhone})`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
   };
 
@@ -639,7 +641,12 @@ export function PublicPropertyPage() {
                 </div>
               )}
               <div className="h-64 rounded-xl overflow-hidden border border-slate-200 shadow-inner">
-                <PropertyMap property={property} />
+                <PropertyMap
+                  address={property.location.address}
+                  city={property.location.city}
+                  state={property.location.state}
+                  zipCode={property.location.zipCode}
+                />
               </div>
             </div>
 

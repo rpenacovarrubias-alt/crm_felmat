@@ -4,6 +4,7 @@
 
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import QRCode from 'qrcode';
 import type { Property, User } from '@/types';
 
 interface PDFExportOptions {
@@ -33,6 +34,20 @@ export async function exportPropertyToPDF({ property, agent, showAgentData }: PD
   const secondaryImages = images.filter(img => img.url !== mainImage);
   const heroThumbnails = secondaryImages.slice(0, 4);
   const remainingImages = secondaryImages.slice(4);
+
+  // Mapa: en vez de una foto de stock (no era un mapa real de nada), generamos
+  // un QR a la busqueda real en Google Maps de la direccion de la propiedad.
+  // Evita depender de una API de mapas estaticos (requeriria API key propia)
+  // y evita el riesgo de "tainted canvas" de cargar una imagen de mapa externa
+  // sin CORS dentro de html2canvas.
+  const mapsSearchUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+    `${property.location.address}, ${property.location.neighborhood || ''}, ${property.location.city}, ${property.location.state}`
+  )}`;
+  const locationQrDataUrl = await QRCode.toDataURL(mapsSearchUrl, {
+    width: 260,
+    margin: 1,
+    color: { dark: '#0f172a', light: '#ffffff' },
+  });
 
   // Calcular número total de páginas (mínimo 2, hasta 4)
   let totalPages = 2;
@@ -232,10 +247,13 @@ export async function exportPropertyToPDF({ property, agent, showAgentData }: PD
           <div><strong style="color: #64748b;">Código postal:</strong> ${property.location.zipCode || '76900'}</div>
           ${property.location.references ? `<div style="margin-top: 6px;"><strong style="color: #64748b;">Referencias:</strong> ${property.location.references}</div>` : ''}
         </div>
-        <div style="width: 320px; height: 180px; border-radius: 8px; overflow: hidden; background-color: #e2e8f0; display: flex; align-items: center; justify-content: center; position: relative;">
-          <img src="https://images.unsplash.com/photo-1524661135-423995f22d0b?w=600&auto=format&fit=crop&q=80" style="width: 100%; height: 100%; object-fit: cover;" />
-          <div style="position: absolute; background-color: rgba(15, 23, 42, 0.75); color: #ffffff; padding: 4px 10px; border-radius: 12px; font-size: 10px; font-weight: bold;">
-            📍 Ver en Google Maps
+        <div style="width: 320px; height: 180px; border-radius: 8px; overflow: hidden; background-color: #ffffff; border: 1px solid #e2e8f0; display: flex; align-items: center; gap: 12px; padding: 12px; box-sizing: border-box;">
+          <img src="${locationQrDataUrl}" style="width: 130px; height: 130px; flex-shrink: 0; border-radius: 4px;" />
+          <div style="font-size: 10px; color: #334155; line-height: 1.5;">
+            <div style="font-weight: bold; color: #0f172a; margin-bottom: 4px; font-size: 11px;">📍 Escanea para ver la ubicación real</div>
+            <div>${property.location.address}</div>
+            <div>${property.location.neighborhood || ''}</div>
+            <div>${property.location.city}, ${property.location.state}</div>
           </div>
         </div>
       </div>
