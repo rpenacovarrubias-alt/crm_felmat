@@ -5,22 +5,25 @@
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import QRCode from 'qrcode';
-import type { Property, User } from '@/types';
+import type { Property } from '@/types';
+import { resolveAgentDisplay, type AgentSource, type AgentOverride } from '@/lib/agentDisplay';
 
 interface PDFExportOptions {
   property: Property;
-  agent: User | null;
+  agent: AgentSource | null;
   showAgentData: boolean;
+  agentOverride?: AgentOverride;
 }
 
-export async function exportPropertyToPDF({ property, agent, showAgentData }: PDFExportOptions): Promise<void> {
-  const agentName = (showAgentData && agent) ? `${agent.name} ${agent.lastName}` : 'Mayra Fajer';
-  const agentRole = (showAgentData && agent?.config?.bio) 
-    ? agent.config.bio 
-    : 'Asesor inmobiliario de Grupo Felmat Servicios Inmobiliarios';
-  const agentEmail = (showAgentData && agent?.email) ? agent.email : 'diversainmobiliariosqueretaro@gmail.com';
-  const agentPhone = (showAgentData && agent?.phone) ? agent.phone : '442 124 9613';
-  const agentAvatar = (showAgentData && agent?.avatar) ? agent.avatar : 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80';
+export async function exportPropertyToPDF({ property, agent, showAgentData, agentOverride }: PDFExportOptions): Promise<void> {
+  const contact = resolveAgentDisplay(showAgentData ? agent : null, agentOverride);
+  const agentName = contact.name;
+  const agentRole = contact.role;
+  const agentEmail = contact.email || '';
+  const agentPhone = contact.phone || '';
+  const agentAvatarHtml = contact.avatar
+    ? `<img src="${contact.avatar}" style="width: 42px; height: 42px; border-radius: 50%; object-fit: cover; border: 2px solid #2563eb;" />`
+    : `<div style="width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(135deg, #1e40af, #3b82f6); display: flex; align-items: center; justify-content: center; color: #ffffff; font-size: 14px; font-weight: bold; border: 2px solid #2563eb;">${agentName.split(' ').map(p => p.charAt(0)).slice(0, 2).join('').toUpperCase()}</div>`;
 
   const images = property.images && property.images.length > 0 ? property.images : [
     { id: '1', url: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&auto=format&fit=crop&q=80', isMain: true, order: 0 },
@@ -62,7 +65,7 @@ export async function exportPropertyToPDF({ property, agent, showAgentData }: PD
       </div>
       <div style="display: flex; justify-content: space-between; align-items: center; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 14px; background-color: #ffffff; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
         <div style="display: flex; align-items: center; gap: 12px;">
-          <img src="${agentAvatar}" style="width: 42px; height: 42px; border-radius: 50%; object-fit: cover; border: 2px solid #2563eb;" />
+          ${agentAvatarHtml}
           <div>
             <div style="font-weight: bold; font-size: 13px; color: #0f172a;">${agentName}</div>
             <div style="font-size: 10px; color: #64748b;">${agentRole}</div>
