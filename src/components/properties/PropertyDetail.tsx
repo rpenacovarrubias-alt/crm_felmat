@@ -5,7 +5,7 @@
 import { useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { useProperties, useLeads } from '@/hooks/useDatabase';
+import { useProperties, useLeads, useUsers } from '@/hooks/useDatabase';
 import type { Property, LeadSource } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -49,6 +49,7 @@ import {
   Clock,
   Send,
   RefreshCw,
+  AlertTriangle,
 } from 'lucide-react';
 import { exportPropertyToPDF } from '@/lib/pdfExport';
 import { Switch } from '@/components/ui/switch';
@@ -1292,6 +1293,7 @@ export function PropertyDetail() {
   const navigate = useNavigate();
   const { user, canViewAllProperties } = useAuth();
   const { properties, remove } = useProperties(canViewAllProperties ? undefined : user?.id);
+  const { users } = useUsers();
   const [shareOpen, setShareOpen] = useState(false);
   const [templatesOpen, setTemplatesOpen] = useState(false);
   const [statsOpen, setStatsOpen] = useState(false);
@@ -1351,8 +1353,17 @@ export function PropertyDetail() {
     return labels[type] || type;
   };
 
+  const agentLinked = users.some(u => u.id === property.agentId);
+
   return (
     <div className="space-y-6">
+      {!agentLinked && (
+        <div className="p-3 bg-amber-50 border border-amber-300 rounded-lg text-sm text-amber-900 flex items-center gap-2">
+          <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+          Esta propiedad no tiene un asesor válido asignado. La ficha pública mostrará un contacto genérico de la agencia hasta que la corrijas en "Editar".
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-4">
