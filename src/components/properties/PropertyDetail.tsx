@@ -5,8 +5,8 @@
 import { useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { useProperties, useLeads, useUsers } from '@/hooks/useDatabase';
-import type { Property, LeadSource } from '@/types';
+import { useProperties, useLeads, useUsers, usePropertyShares } from '@/hooks/useDatabase';
+import type { Property, LeadSource, PropertyShare } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -50,8 +50,10 @@ import {
   Send,
   RefreshCw,
   AlertTriangle,
+  UserCog,
 } from 'lucide-react';
 import { exportPropertyToPDF } from '@/lib/pdfExport';
+import { resolveAgentDisplay } from '@/lib/agentDisplay';
 import { Switch } from '@/components/ui/switch';
 import { PropertyMap } from './PropertyMap';
 import { Textarea } from '@/components/ui/textarea';
@@ -835,12 +837,26 @@ function ShareDialog({
 }) {
   const { user } = useAuth();
   const { create: createLead } = useLeads(user?.id);
+  const { create: createShare } = usePropertyShares();
   const [clientName, setClientName] = useState('');
   const [clientPhone, setClientPhone] = useState('');
   const [copied, setCopied] = useState(false);
   const [exportingPDF, setExportingPDF] = useState(false);
-  const [activeTab, setActiveTab] = useState<'whatsapp' | 'pdf' | 'link'>('whatsapp');
-  
+  const [activeTab, setActiveTab] = useState<'whatsapp' | 'pdf' | 'link' | 'personalizar'>('whatsapp');
+
+  // Ficha personalizada para este envio (ver Tarea 8 del plan / spec de fichas
+  // personalizables). Si esta activa, el link/WhatsApp/PDF de este dialogo
+  // usan estos datos en vez de los del asesor que esta compartiendo.
+  const [activeShare, setActiveShare] = useState<PropertyShare | null>(null);
+  const [creatingShare, setCreatingShare] = useState(false);
+  const [overrideName, setOverrideName] = useState('');
+  const [overridePhone, setOverridePhone] = useState('');
+  const [overrideWhatsapp, setOverrideWhatsapp] = useState('');
+  const [overrideEmail, setOverrideEmail] = useState('');
+  const [overrideCertificate, setOverrideCertificate] = useState('');
+  const [overrideBio, setOverrideBio] = useState('');
+  const [overrideAvatar, setOverrideAvatar] = useState('');
+
   // Opciones de visibilidad de datos del agente
   const [showAgentData, setShowAgentData] = useState(true);
   const [showName, setShowName] = useState(user?.config?.shareSettings?.showName ?? true);
@@ -852,30 +868,61 @@ function ShareDialog({
   if (!property) return null;
 
   const shareUrl = `${window.location.origin}/p/${property.slug || property.id}`;
-  
+  const effectiveShareUrl = activeShare ? `${window.location.origin}/p/${activeShare.slug}` : shareUrl;
+
+  const handleCreatePersonalizedShare = async () => {
+    if (!user) return;
+    setCreatingShare(true);
+    try {
+      const share = await createShare({
+        propertyId: property.id,
+        createdBy: user.id,
+        overrideName: overrideName || undefined,
+        overridePhone: overridePhone || undefined,
+        overrideWhatsapp: overrideWhatsapp || undefined,
+        overrideEmail: overrideEmail || undefined,
+        overrideCertificate: overrideCertificate || undefined,
+        overrideBio: overrideBio || undefined,
+        overrideAvatar: overrideAvatar || undefined,
+      });
+      setActiveShare(share);
+    } finally {
+      setCreatingShare(false);
+    }
+  };
+
+  const handleOverrideAvatarUpload = (files: FileList | null) => {
+    const file = files?.[0];
+    if (!file || !file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = (e) => setOverrideAvatar(e.target?.result as string);
+    reader.readAsDataURL(file);
+  };
+
   // Mensaje profesional para WhatsApp
   // Nota: sin emoji de plano suplementario (🏠📍💰...) -- wa.me/api.whatsapp.com
   // los corrompe en su redirección (confirmado: llegan bien codificados hasta
   // encodeURIComponent, se rompen del lado de WhatsApp). Solo texto + *negritas*.
   const generateWhatsAppMessage = () => {
+    const contact = resolveAgentDisplay(user ?? null, activeShare ?? undefined);
     let message = `*${property.title}*\n\n`;
     message += `*Precio:* $${property.price.toLocaleString('es-MX')} ${property.priceCurrency}\n`;
     message += `*Ubicación:* ${property.location.city}, ${property.location.neighborhood}\n`;
     message += `*Recámaras:* ${property.features.bedrooms} | *Baños:* ${property.features.bathrooms}\n`;
     message += `*Estacionamientos:* ${property.features.parkingSpaces}\n\n`;
-    message += `Ver ficha completa aquí:\n${shareUrl}\n\n`;
+    message += `Ver ficha completa aquí:\n${effectiveShareUrl}\n\n`;
 
-    if (showAgentData && user) {
+    if (showAgentData) {
       message += `---\n*Contacto:*\n`;
-      if (showName) message += `${user.name} ${user.lastName}\n`;
-      if (showCertificate && user.config?.certificateNumber) {
-        message += `Certificado: ${user.config.certificateNumber}\n`;
+      if (showName) message += `${contact.name}\n`;
+      if (showCertificate && contact.certificateNumber) {
+        message += `Certificado: ${contact.certificateNumber}\n`;
       }
-      if (showWhatsApp && user.config?.whatsappNumber) {
-        message += `WhatsApp: ${user.config.whatsappNumber}\n`;
+      if (showWhatsApp && contact.whatsapp) {
+        message += `WhatsApp: ${contact.whatsapp}\n`;
       }
-      if (showPhone) message += `Tel: ${user.phone}\n`;
-      if (showEmail) message += `${user.email}\n`;
+      if (showPhone && contact.phone) message += `Tel: ${contact.phone}\n`;
+      if (showEmail && contact.email) message += `${contact.email}\n`;
     }
 
     message += `\n¿Te interesa? ¡Contáctame!`;
@@ -907,7 +954,7 @@ function ShareDialog({
   };
 
   const copyLink = () => {
-    navigator.clipboard.writeText(shareUrl);
+    navigator.clipboard.writeText(effectiveShareUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -916,10 +963,11 @@ function ShareDialog({
     if (!property || !user) return;
     setExportingPDF(true);
     try {
-      await exportPropertyToPDF({ 
-        property, 
+      await exportPropertyToPDF({
+        property,
         agent: showAgentData ? user : null,
-        showAgentData 
+        showAgentData,
+        agentOverride: activeShare ?? undefined,
       });
     } catch (error) {
       console.error('Error exportando PDF:', error);
@@ -1087,6 +1135,16 @@ function ShareDialog({
           >
             <Copy className="w-4 h-4" />
             Enlace
+          </button>
+          <button
+            onClick={() => setActiveTab('personalizar')}
+            className={cn(
+              "flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-md text-sm font-medium transition-all",
+              activeTab === 'personalizar' ? "bg-white shadow-sm text-primary" : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <UserCog className="w-4 h-4" />
+            Personalizar
           </button>
         </div>
 
@@ -1264,22 +1322,89 @@ function ShareDialog({
             </div>
             
             <div className="flex gap-2">
-              <Input 
-                value={shareUrl} 
-                readOnly 
+              <Input
+                value={effectiveShareUrl}
+                readOnly
                 className="flex-1"
               />
               <Button variant="outline" onClick={copyLink}>
                 {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
               </Button>
             </div>
-            
+
             <Button variant="outline" className="w-full" asChild>
-              <a href={shareUrl} target="_blank" rel="noopener noreferrer">
+              <a href={effectiveShareUrl} target="_blank" rel="noopener noreferrer">
                 <ExternalLink className="w-4 h-4 mr-2" />
                 Ver ficha pública
               </a>
             </Button>
+          </div>
+        )}
+
+        {activeTab === 'personalizar' && (
+          <div className="space-y-4">
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+              <p className="text-sm text-amber-800">
+                <strong>Personalizar contacto para este envío</strong><br />
+                Genera un link aparte de esta ficha mostrando otros datos de contacto
+                -- por ejemplo, de un colega o un referido externo que ni siquiera
+                necesita tener cuenta en el CRM. Lo que dejes en blanco usa tus
+                propios datos reales. La ficha original no se modifica.
+              </p>
+            </div>
+
+            {!activeShare ? (
+              <>
+                <div className="flex items-center gap-3">
+                  <div className="w-14 h-14 rounded-full bg-muted overflow-hidden flex items-center justify-center flex-shrink-0">
+                    {overrideAvatar ? (
+                      <img src={overrideAvatar} alt="Foto personalizada" className="w-full h-full object-cover" />
+                    ) : (
+                      <UserCog className="w-6 h-6 text-muted-foreground" />
+                    )}
+                  </div>
+                  <div>
+                    <Label htmlFor="override-avatar-upload" className="text-xs text-muted-foreground cursor-pointer underline underline-offset-2">
+                      {overrideAvatar ? 'Cambiar foto (opcional)' : 'Subir foto (opcional)'}
+                    </Label>
+                    <input
+                      id="override-avatar-upload"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => handleOverrideAvatarUpload(e.target.files)}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <Input placeholder="Nombre (opcional)" value={overrideName} onChange={(e) => setOverrideName(e.target.value)} />
+                  <Input placeholder="Teléfono (opcional)" value={overridePhone} onChange={(e) => setOverridePhone(e.target.value)} />
+                  <Input placeholder="WhatsApp (opcional)" value={overrideWhatsapp} onChange={(e) => setOverrideWhatsapp(e.target.value)} />
+                  <Input placeholder="Correo (opcional)" value={overrideEmail} onChange={(e) => setOverrideEmail(e.target.value)} />
+                  <Input placeholder="Certificado (opcional)" value={overrideCertificate} onChange={(e) => setOverrideCertificate(e.target.value)} />
+                  <Input placeholder="Rol / descripción corta (opcional)" value={overrideBio} onChange={(e) => setOverrideBio(e.target.value)} />
+                </div>
+                <Button onClick={handleCreatePersonalizedShare} className="w-full" disabled={creatingShare}>
+                  <UserCog className="w-4 h-4 mr-2" />
+                  {creatingShare ? 'Generando...' : 'Generar link personalizado'}
+                </Button>
+              </>
+            ) : (
+              <div className="space-y-3">
+                <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-sm text-emerald-800">
+                  Link personalizado generado. Las pestañas de WhatsApp, PDF y Enlace de arriba ya están usando estos datos.
+                </div>
+                <div className="flex gap-2">
+                  <Input value={effectiveShareUrl} readOnly className="flex-1" />
+                  <Button variant="outline" onClick={copyLink}>
+                    {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  </Button>
+                </div>
+                <Button variant="outline" className="w-full" onClick={() => setActiveShare(null)}>
+                  Quitar personalización y volver a mis datos reales
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </DialogContent>
