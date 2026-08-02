@@ -4,8 +4,9 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { useProperties, useLeads, useUsers } from '@/hooks/useDatabase';
-import type { LeadSource, Property, User } from '@/types';
+import { useProperties, useLeads, useUsers, usePropertyShares } from '@/hooks/useDatabase';
+import type { LeadSource, Property, User, PropertyShare } from '@/types';
+import { resolveAgentDisplay } from '@/lib/agentDisplay';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -315,9 +316,11 @@ export function PublicPropertyPage() {
   
   const { getBySlug, incrementViews } = useProperties();
   const { users } = useUsers();
-  
+  const { getBySlug: getShareBySlug } = usePropertyShares();
+
   const [property, setProperty] = useState<Property | null>(null);
   const [agent, setAgent] = useState<User | null>(null);
+  const [activeShare, setActiveShare] = useState<PropertyShare | null>(null);
   const [loading, setLoading] = useState(true);
   const [contactDialogOpen, setContactDialogOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -326,12 +329,17 @@ export function PublicPropertyPage() {
   useEffect(() => {
     async function loadData() {
       if (identifier) {
-        const found = await getBySlug(identifier);
+        // Primero intenta resolver como un link de ficha personalizada
+        // (ver docs/superpowers/specs/2026-08-01-ficha-asesor-personalizable-design.md).
+        // Si no existe, sigue el comportamiento normal contra `properties`.
+        const share = await getShareBySlug(identifier);
+        const found = await getBySlug(share ? share.propertyId : identifier);
         if (found) {
           setProperty(found);
           incrementViews(found.id);
           const foundAgent = users.find(u => u.id === found.agentId);
           setAgent(foundAgent || null);
+          setActiveShare(share);
         } else {
           setProperty({
             ...DEFAULT_DEMO_PROPERTY,
@@ -372,12 +380,8 @@ export function PublicPropertyPage() {
     );
   }
 
-  // Asesor por defecto (Mayra Fajer) si no se especifica agente en DB
-  const agentName = agent ? `${agent.name} ${agent.lastName}` : 'Mayra Fajer';
-  const agentRole = agent?.config?.bio || 'Asesor Inmobiliario de Grupo FELMAT';
-  const agentPhone = agent?.phone || '442 124 9613';
-  const agentEmail = agent?.email || 'diversainmobiliariosqueretaro@gmail.com';
-  const agentAvatar = agent?.avatar || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80';
+  const agentDisplay = resolveAgentDisplay(agent, activeShare ?? undefined);
+  const { name: agentName, role: agentRole, phone: agentPhone, email: agentEmail, avatar: agentAvatar, isRealAgent } = agentDisplay;
 
   const shareUrl = window.location.href;
 
@@ -405,6 +409,7 @@ export function PublicPropertyPage() {
         property,
         agent,
         showAgentData: true,
+        agentOverride: activeShare ?? undefined,
       });
     } catch (err) {
       console.error('Error al descargar PDF:', err);
@@ -661,14 +666,22 @@ export function PublicPropertyPage() {
                 <div className="bg-gradient-to-r from-blue-900 to-blue-700 h-16 p-4" />
                 <CardContent className="pt-0 p-6 relative">
                   <div className="-mt-12 mb-4 flex items-end justify-between">
-                    <img
-                      src={agentAvatar}
-                      alt={agentName}
-                      className="w-20 h-20 rounded-2xl object-cover border-4 border-white shadow-md bg-white"
-                    />
-                    <Badge className="bg-emerald-500 text-white font-bold text-[10px] px-2.5 py-1">
-                      Asesor Certificado
-                    </Badge>
+                    {agentAvatar ? (
+                      <img
+                        src={agentAvatar}
+                        alt={agentName}
+                        className="w-20 h-20 rounded-2xl object-cover border-4 border-white shadow-md bg-white"
+                      />
+                    ) : (
+                      <div className="w-20 h-20 rounded-2xl bg-blue-800 border-4 border-white shadow-md flex items-center justify-center text-2xl font-bold text-white">
+                        {agentName.split(' ').map(p => p.charAt(0)).slice(0, 2).join('').toUpperCase()}
+                      </div>
+                    )}
+                    {isRealAgent && (
+                      <Badge className="bg-emerald-500 text-white font-bold text-[10px] px-2.5 py-1">
+                        Asesor Certificado
+                      </Badge>
+                    )}
                   </div>
 
                   <div>
@@ -697,10 +710,12 @@ export function PublicPropertyPage() {
                   </div>
 
                   <div className="mt-4 pt-4 border-t border-slate-100 text-xs text-slate-500 space-y-1.5">
-                    <div className="flex items-center gap-2">
-                      <Phone className="w-3.5 h-3.5 text-slate-400" />
-                      <span>{agentPhone}</span>
-                    </div>
+                    {agentPhone && (
+                      <div className="flex items-center gap-2">
+                        <Phone className="w-3.5 h-3.5 text-slate-400" />
+                        <span>{agentPhone}</span>
+                      </div>
+                    )}
                     <div className="flex items-center gap-2">
                       <Mail className="w-3.5 h-3.5 text-slate-400" />
                       <span className="truncate">{agentEmail}</span>
