@@ -239,7 +239,7 @@ export async function exportPropertyToPDF({ property, agent, showAgentData }: PD
     <!-- Ubicación y Mapa -->
     <div style="margin-bottom: 20px;">
       <h3 style="font-size: 15px; font-weight: bold; color: #0f172a; margin: 0 0 10px 0;">Ubicación</h3>
-      <div style="display: flex; gap: 16px; background-color: #f8fafc; padding: 16px; border-radius: 8px; border: 1px solid #e2e8f0;">
+      <div style="display: flex; gap: 16px; background-color: #f8fafc; padding: 16px; border-radius: 8px; border: 1px solid #e2e8f0; align-items: flex-start;">
         <div style="flex: 1; font-size: 11px; color: #334155; line-height: 1.6;">
           <div><strong style="color: #64748b;">Calle:</strong> ${property.location.address}</div>
           <div><strong style="color: #64748b;">Colonia:</strong> ${property.location.neighborhood || 'Fraccionamiento Las Trojes'}</div>
@@ -247,13 +247,20 @@ export async function exportPropertyToPDF({ property, agent, showAgentData }: PD
           <div><strong style="color: #64748b;">Código postal:</strong> ${property.location.zipCode || '76900'}</div>
           ${property.location.references ? `<div style="margin-top: 6px;"><strong style="color: #64748b;">Referencias:</strong> ${property.location.references}</div>` : ''}
         </div>
-        <div style="width: 320px; height: 180px; border-radius: 8px; overflow: hidden; background-color: #ffffff; border: 1px solid #e2e8f0; display: flex; align-items: center; gap: 12px; padding: 12px; box-sizing: border-box;">
-          <img src="${locationQrDataUrl}" style="width: 130px; height: 130px; flex-shrink: 0; border-radius: 4px;" />
-          <div style="font-size: 10px; color: #334155; line-height: 1.5;">
-            <div style="font-weight: bold; color: #0f172a; margin-bottom: 4px; font-size: 11px;">📍 Escanea para ver la ubicación real</div>
-            <div>${property.location.address}</div>
-            <div>${property.location.neighborhood || ''}</div>
-            <div>${property.location.city}, ${property.location.state}</div>
+        <div style="width: 320px; display: flex; flex-direction: column; gap: 10px;">
+          <div style="background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 10px 12px; display: flex; align-items: center; gap: 8px;">
+            <div style="width: 32px; height: 32px; border-radius: 50%; background-color: #2563eb; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0;">📍</div>
+            <div style="font-size: 10px; color: #1e3a8a; line-height: 1.4;">
+              <div style="font-weight: bold;">${property.location.neighborhood || property.location.city}</div>
+              <div>${property.location.city}, ${property.location.state}</div>
+            </div>
+          </div>
+          <div style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; display: flex; gap: 10px; align-items: center;">
+            <img src="${locationQrDataUrl}" style="width: 90px; height: 90px; flex-shrink: 0; border-radius: 4px;" />
+            <div style="font-size: 9px; color: #334155; line-height: 1.4;">
+              <div style="font-weight: bold; color: #0f172a; margin-bottom: 2px;">Escanea o copia el link para ver el mapa</div>
+              <div style="word-break: break-all; color: #2563eb;">${mapsSearchUrl}</div>
+            </div>
           </div>
         </div>
       </div>
