@@ -495,6 +495,25 @@ export interface PropertyList {
   updatedAt: string;
 }
 
+// Ficha compartida con datos de contacto personalizados. No requiere
+// que el contacto sea un usuario del CRM -- los campos overrideX son
+// texto libre. La propiedad original (propertyId) nunca se modifica.
+export interface PropertyShare {
+  id: string;
+  slug: string;
+  propertyId: string;
+  createdBy: string;
+  overrideName?: string;
+  overridePhone?: string;
+  overrideWhatsapp?: string;
+  overrideEmail?: string;
+  overrideAvatar?: string;
+  overrideCertificate?: string;
+  overrideBio?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // Estadísticas
 export interface DashboardStats {
   // Propiedades

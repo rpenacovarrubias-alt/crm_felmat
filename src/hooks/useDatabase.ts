@@ -7,11 +7,12 @@ import type {
   User, Property, Lead, LeadStatus, Activity, AgentWebsite, Notification, DashboardStats, PropertyList,
   Condominio, UnidadCondominio, Cotizacion, CartaPresentacion, Contrato, Fianza,
   AirbnbListing, AirbnbMensaje, AirbnbReserva, AirbnbPrecio, TipoPropiedadCustom, AmenidadCatalogo,
+  PropertyShare,
 } from '@/types';
 
 // Nombre de la base de datos y versión
 const DB_NAME = 'PropTechCRM';
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 
 // Stores (tablas)
 const STORES = {
@@ -25,6 +26,7 @@ const STORES = {
   agentWebsites: 'agentWebsites',
   notifications: 'notifications',
   propertyLists: 'propertyLists',
+  propertyShares: 'propertyShares',
   condominios: 'condominios',
   unidadesCondominio: 'unidadesCondominio',
   cotizaciones: 'cotizaciones',
@@ -104,6 +106,11 @@ class DatabaseManager {
           const listStore = db.createObjectStore(STORES.propertyLists, { keyPath: 'id' });
           listStore.createIndex('agentId', 'agentId', { unique: false });
           listStore.createIndex('slug', 'slug', { unique: true });
+        }
+        if (!db.objectStoreNames.contains(STORES.propertyShares)) {
+          const shareStore = db.createObjectStore(STORES.propertyShares, { keyPath: 'id' });
+          shareStore.createIndex('slug', 'slug', { unique: true });
+          shareStore.createIndex('propertyId', 'propertyId', { unique: false });
         }
         if (!db.objectStoreNames.contains(STORES.condominios)) {
           const store = db.createObjectStore(STORES.condominios, { keyPath: 'id' });
@@ -768,6 +775,30 @@ export function usePropertyLists(agentId?: string) {
   };
 
   return { lists, loading, create, update, remove, addProperty, removeProperty, getBySlug, incrementViews, refresh };
+}
+
+// Hook para Fichas Compartidas Personalizadas (ver docs/superpowers/specs/2026-08-01-ficha-asesor-personalizable-design.md)
+export function usePropertyShares() {
+  const create = async (
+    input: Omit<PropertyShare, 'id' | 'slug' | 'createdAt' | 'updatedAt'>
+  ): Promise<PropertyShare> => {
+    const newShare: PropertyShare = {
+      ...input,
+      id: crypto.randomUUID(),
+      slug: `c-${crypto.randomUUID().slice(0, 8)}`,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    await dbManager.put(STORES.propertyShares, newShare);
+    return newShare;
+  };
+
+  const getBySlug = async (slug: string): Promise<PropertyShare | null> => {
+    const all = await dbManager.getAll<PropertyShare>(STORES.propertyShares);
+    return all.find(s => s.slug === slug) || null;
+  };
+
+  return { create, getBySlug };
 }
 
 // Hook para Administración de Condominios
