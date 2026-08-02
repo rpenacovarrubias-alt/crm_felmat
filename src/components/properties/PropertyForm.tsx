@@ -5,7 +5,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { useProperties, notify } from '@/hooks/useDatabase';
+import { useProperties, useUsers, notify } from '@/hooks/useDatabase';
 import type { Property, PropertyType, PropertyStatus, TransactionType, PropertyImage } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -218,7 +218,9 @@ export function PropertyForm() {
   const { id } = useParams<{ id: string }>();
   const { user, canViewAllProperties } = useAuth();
   const { properties, create, update } = useProperties(canViewAllProperties ? undefined : user?.id);
-  
+  const { users } = useUsers();
+  const assignableAgents = users.filter(u => u.isActive && (u.role === 'agent' || u.role === 'admin'));
+
   const isEditing = !!id;
   const existingProperty = isEditing ? properties.find(p => p.id === id) : null;
 
@@ -321,10 +323,19 @@ export function PropertyForm() {
     setIsSubmitting(true);
 
     try {
+      // Antes esto forzaba agentId: user.id siempre -- tanto al crear como
+      // al EDITAR -- asi que un admin que corregia cualquier campo de una
+      // propiedad de otro asesor terminaba reasignandola a si mismo sin
+      // darse cuenta, y el selector "Asesor asignado" nuevo no serviria de
+      // nada porque su valor se descartaria al guardar. Ahora se respeta
+      // formData.agentId (precargado del asesor real al editar, o elegido
+      // explicitamente con el selector nuevo al crear/editar); solo cae a
+      // user.id cuando no hay ningun agentId todavia (una propiedad nueva
+      // donde nadie toco el selector).
       const propertyData = {
         ...formData,
         slug: formData.slug || generateSlug(formData.title || ''),
-        agentId: user.id,
+        agentId: formData.agentId || user.id,
       } as Omit<Property, 'id' | 'createdAt' | 'updatedAt' | 'views' | 'leadsCount' | 'favoritesCount'>;
 
       if (isEditing && id) {
@@ -491,6 +502,31 @@ export function PropertyForm() {
                         ))}
                       </SelectContent>
                     </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="agentId">Asesor asignado *</Label>
+                    {canViewAllProperties ? (
+                      <Select
+                        value={formData.agentId || user?.id}
+                        onValueChange={(v) => handleChange('agentId', v)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {assignableAgents.map(agent => (
+                            <SelectItem key={agent.id} value={agent.id}>
+                              {agent.name} {agent.lastName}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <div className="px-3 py-2 rounded-md border bg-muted/50 text-sm">
+                        {user?.name} {user?.lastName}
+                      </div>
+                    )}
                   </div>
 
                   <div className="space-y-2 md:col-span-2">
