@@ -381,7 +381,7 @@ export function PublicPropertyPage() {
   }
 
   const agentDisplay = resolveAgentDisplay(agent, activeShare ?? undefined);
-  const { name: agentName, role: agentRole, phone: agentPhone, email: agentEmail, avatar: agentAvatar, isRealAgent, certificateNumber: agentCertificateNumber } = agentDisplay;
+  const { name: agentName, role: agentRole, phone: agentPhone, email: agentEmail, avatar: agentAvatar, certificateNumber: agentCertificateNumber } = agentDisplay;
 
   const shareUrl = window.location.href;
 
