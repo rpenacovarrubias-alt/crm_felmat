@@ -54,4 +54,12 @@ describe('resolveAgentDisplay', () => {
     expect(result.phone).toBe('4429998877');
     expect(result.email).toBe(AGENCY_FALLBACK_EMAIL);
   });
+
+  it('un override sin certificado no debe traer un certificado heredado de ningun lado', () => {
+    const result = resolveAgentDisplay(null, {
+      overrideName: 'Juan Pérez (referido)',
+      overridePhone: '4429998877',
+    });
+    expect(result.certificateNumber).toBeUndefined();
+  });
 });

@@ -512,7 +512,7 @@ export function PropertyForm() {
                         onValueChange={(v) => handleChange('agentId', v)}
                       >
                         <SelectTrigger>
-                          <SelectValue />
+                          <SelectValue placeholder="Selecciona un asesor" />
                         </SelectTrigger>
                         <SelectContent>
                           {assignableAgents.map(agent => (

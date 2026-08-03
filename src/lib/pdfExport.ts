@@ -72,8 +72,8 @@ export async function exportPropertyToPDF({ property, agent, showAgentData, agen
           </div>
         </div>
         <div style="font-size: 11px; color: #334155; text-align: right; display: flex; gap: 14px; align-items: center;">
-          <div>📧 ${agentEmail}</div>
-          <div>📞 <strong>${agentPhone}</strong></div>
+          ${agentEmail ? `<div>📧 ${agentEmail}</div>` : ''}
+          ${agentPhone ? `<div>📞 <strong>${agentPhone}</strong></div>` : ''}
         </div>
       </div>
     </div>

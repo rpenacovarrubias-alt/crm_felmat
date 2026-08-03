@@ -10,7 +10,7 @@
 // agencia. Un "override" (de una ficha personalizada) puede sustituir
 // campos individuales encima de eso.
 
-export const AGENCY_FALLBACK_EMAIL = 'contacto@felmat.com.mx';
+export const AGENCY_FALLBACK_EMAIL = 'hola@felmat.com.mx';
 
 export interface AgentSource {
   name: string;

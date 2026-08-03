@@ -1418,7 +1418,7 @@ export function PropertyDetail() {
   const navigate = useNavigate();
   const { user, canViewAllProperties } = useAuth();
   const { properties, remove } = useProperties(canViewAllProperties ? undefined : user?.id);
-  const { users } = useUsers();
+  const { users, loading: usersLoading } = useUsers();
   const [shareOpen, setShareOpen] = useState(false);
   const [templatesOpen, setTemplatesOpen] = useState(false);
   const [statsOpen, setStatsOpen] = useState(false);
@@ -1482,7 +1482,7 @@ export function PropertyDetail() {
 
   return (
     <div className="space-y-6">
-      {!agentLinked && (
+      {!usersLoading && !agentLinked && (
         <div className="p-3 bg-amber-50 border border-amber-300 rounded-lg text-sm text-amber-900 flex items-center gap-2">
           <AlertTriangle className="w-4 h-4 flex-shrink-0" />
           Esta propiedad no tiene un asesor válido asignado. La ficha pública mostrará un contacto genérico de la agencia hasta que la corrijas en "Editar".

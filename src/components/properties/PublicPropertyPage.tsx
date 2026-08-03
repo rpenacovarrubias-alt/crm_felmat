@@ -381,7 +381,7 @@ export function PublicPropertyPage() {
   }
 
   const agentDisplay = resolveAgentDisplay(agent, activeShare ?? undefined);
-  const { name: agentName, role: agentRole, phone: agentPhone, email: agentEmail, avatar: agentAvatar, isRealAgent } = agentDisplay;
+  const { name: agentName, role: agentRole, phone: agentPhone, email: agentEmail, avatar: agentAvatar, isRealAgent, certificateNumber: agentCertificateNumber } = agentDisplay;
 
   const shareUrl = window.location.href;
 
@@ -394,7 +394,7 @@ export function PublicPropertyPage() {
   const handleWhatsAppShare = () => {
     // Sin emoji de plano suplementario: wa.me/api.whatsapp.com los corrompe
     // en su redirección aunque lleguen bien codificados desde el navegador.
-    const text = `*${property.title}*\nPrecio: $${property.price.toLocaleString('es-MX')} ${property.priceCurrency}\nUbicación: ${property.location.city}, ${property.location.neighborhood || ''}\n\nVer ficha completa:\n${shareUrl}\n\nAsesor: ${agentName} (${agentPhone})`;
+    const text = `*${property.title}*\nPrecio: $${property.price.toLocaleString('es-MX')} ${property.priceCurrency}\nUbicación: ${property.location.city}, ${property.location.neighborhood || ''}\n\nVer ficha completa:\n${shareUrl}\n\nAsesor: ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
   };
 
@@ -677,7 +677,7 @@ export function PublicPropertyPage() {
                         {agentName.split(' ').map(p => p.charAt(0)).slice(0, 2).join('').toUpperCase()}
                       </div>
                     )}
-                    {isRealAgent && (
+                    {agentCertificateNumber && (
                       <Badge className="bg-emerald-500 text-white font-bold text-[10px] px-2.5 py-1">
                         Asesor Certificado
                       </Badge>
@@ -716,10 +716,12 @@ export function PublicPropertyPage() {
                         <span>{agentPhone}</span>
                       </div>
                     )}
-                    <div className="flex items-center gap-2">
-                      <Mail className="w-3.5 h-3.5 text-slate-400" />
-                      <span className="truncate">{agentEmail}</span>
-                    </div>
+                    {agentEmail && (
+                      <div className="flex items-center gap-2">
+                        <Mail className="w-3.5 h-3.5 text-slate-400" />
+                        <span className="truncate">{agentEmail}</span>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
