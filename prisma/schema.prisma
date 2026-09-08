@@ -79,3 +79,83 @@ model PublicacionCanal {
   
   @@unique([anuncioId, canal])
 }
+
+model FelmatUser {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  passwordHash   String?
+  salt           String?
+  name           String
+  lastName       String
+  phone          String?
+  avatar         String?
+  role           String    // 'super_admin' | 'admin' | 'agent' | 'assistant'
+  agencyId       String?
+  isActive       Boolean   @default(true)
+  propertyAccess Json      @default("[]") // string[] de FelmatProperty.id; [] = todas (solo aplica a agent/assistant)
+  config         Json?     // AgentConfig completo (branding, shareSettings, digitalCard...)
+  lastLogin      DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  properties     FelmatProperty[]
+  shares         FelmatPropertyShare[]
+
+  @@map("felmat_users")
+}
+
+model FelmatProperty {
+  id              String    @id @default(cuid())
+  title           String
+  description     String
+  propertyType    String
+  transactionType String
+  price           Float
+  priceCurrency   String    @default("MXN")
+  maintenanceFee  Float?
+  status          String
+  location        Json      // Location
+  features        Json      // PropertyFeatures
+  images          Json      @default("[]") // PropertyImage[]
+  agentId         String
+  agent           FelmatUser @relation(fields: [agentId], references: [id])
+  agencyId        String?
+  slug            String    @unique
+  metaTitle       String?
+  metaDescription String?
+  tags            Json      @default("[]")
+  views           Int       @default(0)
+  leadsCount      Int       @default(0)
+  favoritesCount  Int       @default(0)
+  publishedAt     DateTime?
+  isPublished     Boolean   @default(false)
+  isFeatured      Boolean   @default(false)
+  commission      Float?
+  commissionType  String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  shares          FelmatPropertyShare[]
+
+  @@index([agentId])
+  @@index([status])
+  @@map("felmat_properties")
+}
+
+model FelmatPropertyShare {
+  id                  String   @id @default(cuid())
+  slug                String   @unique
+  propertyId          String
+  property            FelmatProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  createdBy           String
+  creator             FelmatUser @relation(fields: [createdBy], references: [id])
+  overrideName        String?
+  overridePhone       String?
+  overrideWhatsapp    String?
+  overrideEmail       String?
+  overrideAvatar      String?
+  overrideCertificate String?
+  overrideBio         String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@map("felmat_property_shares")
+}
