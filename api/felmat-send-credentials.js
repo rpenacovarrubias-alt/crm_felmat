@@ -19,12 +19,17 @@ export default async function handler(req, res) {
   if (!user) return res.status(404).json({ error: 'not_found' });
 
   // Hay que esperar este fetch -- mismo motivo que en felmat-password-reset.js.
-  const webhookRes = await fetch(NOTIFY_WEBHOOK, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name: user.name, email: user.email, password: tempPassword, loginUrl: LOGIN_URL }),
-  });
-  if (!webhookRes.ok) return res.status(502).json({ error: 'webhook_failed' });
+  try {
+    const webhookRes = await fetch(NOTIFY_WEBHOOK, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: user.name, email: user.email, password: tempPassword, loginUrl: LOGIN_URL }),
+    });
+    if (!webhookRes.ok) return res.status(502).json({ error: 'webhook_failed' });
+  } catch {
+    // ponytail: network-level fetch failure (DNS, connection refused, TLS error, timeout, etc.)
+    return res.status(502).json({ error: 'webhook_failed' });
+  }
 
   return res.status(200).json({ ok: true });
 }
