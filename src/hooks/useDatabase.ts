@@ -9,6 +9,7 @@ import type {
   AirbnbListing, AirbnbMensaje, AirbnbReserva, AirbnbPrecio, TipoPropiedadCustom, AmenidadCatalogo,
   PropertyShare,
 } from '@/types';
+import { apiFetch } from '@/utils/apiFetch';
 
 // Nombre de la base de datos y versión
 const DB_NAME = 'PropTechCRM';
@@ -251,7 +252,8 @@ export function useUsers() {
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
-    const data = await dbManager.getAll<User>(STORES.users);
+    const res = await apiFetch('/api/felmat-users');
+    const data = res.ok ? await res.json() : [];
     setUsers(data);
     setLoading(false);
   }, []);
@@ -261,27 +263,24 @@ export function useUsers() {
   }, [refresh]);
 
   const create = async (user: Omit<User, 'id' | 'createdAt' | 'updatedAt'>): Promise<User> => {
-    const newUser: User = {
-      ...user,
-      id: crypto.randomUUID(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    await dbManager.put(STORES.users, newUser);
+    const res = await apiFetch('/api/felmat-users', { method: 'POST', body: JSON.stringify(user) });
+    const json = await res.json();
+    if (!res.ok || !json.ok) throw new Error(json.error || 'No se pudo crear el usuario');
     await refresh();
-    return newUser;
+    return json.user;
   };
 
   const update = async (id: string, updates: Partial<User>): Promise<void> => {
-    const existing = await dbManager.get<User>(STORES.users, id);
-    if (!existing) throw new Error('User not found');
-    const updated = { ...existing, ...updates, updatedAt: new Date().toISOString() };
-    await dbManager.put(STORES.users, updated);
+    const res = await apiFetch('/api/felmat-users', { method: 'PUT', body: JSON.stringify({ id, ...updates }) });
+    const json = await res.json();
+    if (!res.ok || !json.ok) throw new Error(json.error || 'No se pudo actualizar el usuario');
     await refresh();
   };
 
   const remove = async (id: string): Promise<void> => {
-    await dbManager.delete(STORES.users, id);
+    const res = await apiFetch(`/api/felmat-users?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+    const json = await res.json();
+    if (!res.ok || !json.ok) throw new Error(json.error || 'No se pudo eliminar el usuario');
     await refresh();
   };
 
@@ -294,14 +293,9 @@ export function useProperties(agentId?: string) {
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
-    let data: Property[];
-    if (agentId) {
-      data = await dbManager.getByIndex<Property>(STORES.properties, 'agentId', agentId);
-    } else {
-      data = await dbManager.getAll<Property>(STORES.properties);
-    }
-    // Ordenar por fecha de creación descendente
-    data.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    const url = agentId ? `/api/felmat-properties?agentId=${encodeURIComponent(agentId)}` : '/api/felmat-properties';
+    const res = await apiFetch(url);
+    const data = res.ok ? await res.json() : [];
     setProperties(data);
     setLoading(false);
   }, [agentId]);
@@ -311,44 +305,35 @@ export function useProperties(agentId?: string) {
   }, [refresh]);
 
   const create = async (property: Omit<Property, 'id' | 'createdAt' | 'updatedAt' | 'views' | 'leadsCount' | 'favoritesCount'>): Promise<Property> => {
-    const newProperty: Property = {
-      ...property,
-      id: crypto.randomUUID(),
-      views: 0,
-      leadsCount: 0,
-      favoritesCount: 0,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    await dbManager.put(STORES.properties, newProperty);
+    const res = await apiFetch('/api/felmat-properties', { method: 'POST', body: JSON.stringify(property) });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'No se pudo crear la propiedad');
     await refresh();
-    return newProperty;
+    return json;
   };
 
   const update = async (id: string, updates: Partial<Property>): Promise<void> => {
-    const existing = await dbManager.get<Property>(STORES.properties, id);
-    if (!existing) throw new Error('Property not found');
-    const updated = { ...existing, ...updates, updatedAt: new Date().toISOString() };
-    await dbManager.put(STORES.properties, updated);
+    const res = await apiFetch('/api/felmat-properties', { method: 'PUT', body: JSON.stringify({ id, ...updates }) });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'No se pudo actualizar la propiedad');
     await refresh();
   };
 
   const remove = async (id: string): Promise<void> => {
-    await dbManager.delete(STORES.properties, id);
+    const res = await apiFetch(`/api/felmat-properties?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'No se pudo eliminar la propiedad');
     await refresh();
   };
 
   const incrementViews = async (id: string): Promise<void> => {
-    const existing = await dbManager.get<Property>(STORES.properties, id);
-    if (existing) {
-      existing.views += 1;
-      await dbManager.put(STORES.properties, existing);
-    }
+    await apiFetch('/api/felmat-properties', { method: 'PUT', body: JSON.stringify({ id, incrementViews: true }) });
   };
 
   const getBySlug = async (slug: string): Promise<Property | null> => {
-    const all = await dbManager.getAll<Property>(STORES.properties);
-    return all.find(p => p.slug === slug || p.id === slug) || null;
+    const res = await apiFetch(`/api/felmat-properties?slug=${encodeURIComponent(slug)}`);
+    if (!res.ok) return null;
+    return res.json();
   };
 
   return { properties, loading, create, update, remove, refresh, incrementViews, getBySlug };
@@ -782,20 +767,16 @@ export function usePropertyShares() {
   const create = async (
     input: Omit<PropertyShare, 'id' | 'slug' | 'createdAt' | 'updatedAt'>
   ): Promise<PropertyShare> => {
-    const newShare: PropertyShare = {
-      ...input,
-      id: crypto.randomUUID(),
-      slug: `c-${crypto.randomUUID().slice(0, 8)}`,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    await dbManager.put(STORES.propertyShares, newShare);
-    return newShare;
+    const res = await apiFetch('/api/felmat-property-shares', { method: 'POST', body: JSON.stringify(input) });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'No se pudo crear la ficha compartida');
+    return json;
   };
 
   const getBySlug = async (slug: string): Promise<PropertyShare | null> => {
-    const all = await dbManager.getAll<PropertyShare>(STORES.propertyShares);
-    return all.find(s => s.slug === slug) || null;
+    const res = await apiFetch(`/api/felmat-property-shares?slug=${encodeURIComponent(slug)}`);
+    if (!res.ok) return null;
+    return res.json();
   };
 
   return { create, getBySlug };
