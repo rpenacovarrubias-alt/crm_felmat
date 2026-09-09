@@ -113,6 +113,25 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, user: updated });
     }
 
+    // Autoedicion: el propio usuario puede tocar su perfil basico sin ser
+    // admin, pero nunca via este branch su role/isActive/email/agencyId/
+    // propertyAccess (escalada de privilegios) -- whitelist explicito.
+    const isSelfEdit = b.id === session.sub;
+    if (isSelfEdit) {
+      const updated = await prisma.felmatUser.update({
+        where: { id: b.id },
+        data: {
+          name: b.name ?? target.name,
+          lastName: b.lastName ?? target.lastName,
+          phone: b.phone ?? target.phone,
+          avatar: b.avatar ?? target.avatar,
+          config: b.config ?? target.config,
+        },
+        select: SAFE_USER_SELECT,
+      });
+      return res.status(200).json({ ok: true, user: updated });
+    }
+
     if (!isFullAdmin(session.role) || !canManageTarget(session, target.role)) return res.status(403).json({ error: 'forbidden' });
     if (b.role && !canManageTarget(session, b.role)) return res.status(403).json({ error: 'forbidden' });
     const updated = await prisma.felmatUser.update({
