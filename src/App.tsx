@@ -10,6 +10,8 @@ import { useDatabaseInit } from '@/hooks/useDatabase';
 
 // Lazy loading de páginas
 const Login = lazy(() => import('@/pages/Login'));
+const ForgotPassword = lazy(() => import('@/pages/ForgotPassword'));
+const ResetPassword = lazy(() => import('@/pages/ResetPassword'));
 const Dashboard = lazy(() => import('@/components/dashboard/Dashboard'));
 const PropertyList = lazy(() => import('@/components/properties/PropertyList'));
 const PropertyForm = lazy(() => import('@/components/properties/PropertyForm'));
@@ -78,6 +80,8 @@ function AppRoutes() {
       <Routes>
         {/* Public routes */}
         <Route path="/login" element={<Login />} />
+        <Route path="/olvide-contrasena" element={<ForgotPassword />} />
+        <Route path="/restablecer" element={<ResetPassword />} />
         <Route path="/p/:slug" element={<PublicPropertyPage />} />
         <Route path="/p/:id" element={<PublicPropertyPage />} />
         <Route path="/propiedades/publica/:id" element={<PublicPropertyPage />} />
