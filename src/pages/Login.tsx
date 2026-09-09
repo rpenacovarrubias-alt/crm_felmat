@@ -9,7 +9,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   Home,
@@ -88,13 +87,6 @@ export function Login() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Tabs defaultValue="email" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-4">
-                  <TabsTrigger value="email">Email</TabsTrigger>
-                  <TabsTrigger value="demo">Demo</TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="email">
                   <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="email">Correo electrónico</Label>
@@ -152,7 +144,7 @@ export function Login() {
                           Recordarme
                         </Label>
                       </div>
-                      <Link to="/forgot-password" className="text-sm text-primary hover:underline">
+                      <Link to="/olvide-contrasena" className="text-sm text-primary hover:underline">
                         ¿Olvidaste tu contraseña?
                       </Link>
                     </div>
@@ -168,41 +160,6 @@ export function Login() {
                       )}
                     </Button>
                   </form>
-                </TabsContent>
-
-                <TabsContent value="demo">
-                  <div className="space-y-4">
-                    <div className="p-4 bg-muted rounded-lg">
-                      <p className="text-sm text-muted-foreground mb-4">
-                        Usa estas credenciales de demo para explorar el sistema:
-                      </p>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Email:</span>
-                          <code className="bg-background px-2 py-0.5 rounded">agente@felmat.com</code>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Contraseña:</span>
-                          <code className="bg-background px-2 py-0.5 rounded">123456</code>
-                        </div>
-                      </div>
-                    </div>
-                    <Button 
-                      className="w-full" 
-                      variant="outline"
-                      onClick={() => {
-                        setEmail('agente@felmat.com');
-                        setPassword('123456');
-                      }}
-                    >
-                      Autocompletar
-                    </Button>
-                    <p className="text-xs text-muted-foreground text-center">
-                      O usa cualquier email con la contraseña "demo"
-                    </p>
-                  </div>
-                </TabsContent>
-              </Tabs>
 
               <div className="mt-6 text-center text-sm">
                 <span className="text-muted-foreground">¿No tienes cuenta? </span>
