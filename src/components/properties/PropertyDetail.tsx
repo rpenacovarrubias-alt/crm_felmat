@@ -1417,7 +1417,7 @@ export function PropertyDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user, canViewAllProperties } = useAuth();
-  const { properties, remove } = useProperties(canViewAllProperties ? undefined : user?.id);
+  const { properties, loading, remove } = useProperties(canViewAllProperties ? undefined : user?.id);
   const { users, loading: usersLoading } = useUsers();
   const [shareOpen, setShareOpen] = useState(false);
   const [templatesOpen, setTemplatesOpen] = useState(false);
@@ -1425,6 +1425,15 @@ export function PropertyDetail() {
   const [qrOpen, setQrOpen] = useState(false);
 
   const property = properties.find(p => p.id === id);
+
+  if (loading && !property) {
+    return (
+      <div className="text-center py-16">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-current mx-auto mb-4" />
+        <p className="text-muted-foreground">Cargando propiedad...</p>
+      </div>
+    );
+  }
 
   if (!property) {
     return (
