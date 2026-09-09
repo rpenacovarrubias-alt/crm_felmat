@@ -14,6 +14,7 @@ export interface User {
   avatar?: string;
   role: UserRole;
   agencyId?: string;
+  propertyAccess?: string[]; // ids de Property asignados explicitamente (agent/assistant); [] o undefined = solo lo propio
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
