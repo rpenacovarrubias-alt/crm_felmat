@@ -33,8 +33,13 @@ export default async function handler(req, res) {
   if (req.method === 'PUT' && req.body && req.body.incrementViews) {
     const id = req.body.id;
     if (!id) return res.status(400).json({ error: 'missing_id' });
+    // ponytail: same not_found for missing vs unpublished, same as GET's public path -- avoids leaking draft existence
     const updated = await prisma.felmatProperty
-      .update({ where: { id }, data: { views: { increment: 1 } }, select: { id: true, views: true } })
+      .update({
+        where: { id, isPublished: true },
+        data: { views: { increment: 1 } },
+        select: { id: true, views: true },
+      })
       .catch(() => null);
     if (!updated) return res.status(404).json({ error: 'not_found' });
     return res.status(200).json({ ok: true, views: updated.views });
@@ -85,8 +90,18 @@ export default async function handler(req, res) {
     if (!existing) return res.status(404).json({ error: 'not_found' });
     if (!canEditProperty(session, existing)) return res.status(403).json({ error: 'forbidden' });
 
-    const data = { ...b };
-    delete data.id;
+    // ponytail: whitelist -- mirrors POST's field list, keeps agentId/views/leadsCount/
+    // favoritesCount/createdAt/updatedAt/id out of reach of mass assignment
+    const data = {};
+    const EDITABLE_FIELDS = [
+      'title', 'description', 'propertyType', 'transactionType', 'price', 'priceCurrency',
+      'maintenanceFee', 'status', 'location', 'features', 'images', 'agencyId', 'slug',
+      'metaTitle', 'metaDescription', 'tags', 'isPublished', 'isFeatured', 'commission', 'commissionType',
+    ];
+    for (const field of EDITABLE_FIELDS) {
+      if (field in b) data[field] = b[field];
+      else data[field] = existing[field];
+    }
     if (data.isPublished && !existing.isPublished) data.publishedAt = new Date();
     const updated = await prisma.felmatProperty.update({ where: { id: b.id }, data });
     return res.status(200).json(updated);
