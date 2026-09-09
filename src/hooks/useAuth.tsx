@@ -1,74 +1,12 @@
 // ============================================
-// SISTEMA DE AUTENTICACIÓN MULTIUSUARIO - CON ROLES
+// SISTEMA DE AUTENTICACIÓN MULTIUSUARIO - BACKEND REAL (Postgres)
 // ============================================
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { User, UserRole } from '@/types';
-import dbManager from '@/hooks/useDatabase';
+import { apiFetch, setAuthToken, getAuthToken } from '@/utils/apiFetch';
 
-// Store de IndexedDB donde vive el directorio de usuarios (mismo que useUsers() en useDatabase.ts)
-const USERS_STORE = 'users';
-
-// Datos de demo para iniciar rápidamente
-const DEMO_USERS: User[] = [
-  {
-    id: 'admin-1',
-    email: 'admin@felmat.com',
-    name: 'Administrador',
-    lastName: 'Sistema',
-    phone: '+52 55 1234 5678',
-    role: 'admin',
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    config: {
-      whatsappNumber: '+52 55 1234 5678',
-      bio: 'Administrador del sistema Grupo FELMAT CRM',
-      certificateNumber: 'ADMIN-2024-001',
-      branding: {
-        primaryColor: '#1e40af',
-        secondaryColor: '#f59e0b',
-      },
-    },
-  },
-  {
-    id: 'agent-1',
-    email: 'agente@felmat.com',
-    name: 'Ricardo',
-    lastName: 'FELMAT',
-    phone: '+52 55 9876 5432',
-    role: 'agent',
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    config: {
-      whatsappNumber: '+52 55 9876 5432',
-      telegramUsername: 'ricardo_felmat',
-      bio: 'Agente inmobiliario certificado especializado en propiedades de lujo',
-      certificateNumber: 'FELMAT-2024-001',
-      socialLinks: {
-        facebook: 'https://facebook.com/felmat.inmobiliaria',
-        instagram: 'https://instagram.com/felmat.inmobiliaria',
-        linkedin: 'https://linkedin.com/company/felmat',
-      },
-      branding: {
-        primaryColor: '#1e40af',
-        secondaryColor: '#f59e0b',
-        logo: '/logo-felmat.png',
-      },
-      shareSettings: {
-        showName: true,
-        showPhone: true,
-        showWhatsApp: true,
-        showCertificate: true,
-        showEmail: true,
-      },
-    },
-  },
-];
-
-// Storage keys
-const AUTH_STORAGE_KEY = 'proptech_auth_user';
+const AUTH_STORAGE_KEY = 'felmat_auth_user';
 
 interface AuthContextType {
   user: User | null;
@@ -81,12 +19,12 @@ interface AuthContextType {
   logout: () => void;
   updateUser: (updates: Partial<User>) => Promise<void>;
   hasRole: (roles: UserRole[]) => boolean;
-  // Gestión de usuarios (solo admin)
-  createUser: (userData: Omit<User, 'id' | 'createdAt' | 'updatedAt'>) => Promise<User>;
+  createUser: (userData: Omit<User, 'id' | 'createdAt' | 'updatedAt'>) => Promise<{ user: User; tempPassword: string }>;
   updateUserById: (id: string, updates: Partial<User>) => Promise<void>;
   deleteUser: (id: string) => Promise<void>;
   toggleUserStatus: (id: string) => Promise<void>;
-  // Permisos
+  refreshUsers: () => Promise<void>;
+  sendCredentials: (userId: string, tempPassword: string) => Promise<void>;
   canManageUsers: boolean;
   canDeleteProperty: (propertyAgentId: string) => boolean;
   canEditProperty: (propertyAgentId: string) => boolean;
@@ -98,83 +36,63 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [users, setUsers] = useState<User[]>(DEMO_USERS);
+  const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Cargar directorio de usuarios desde IndexedDB (misma fuente que useUsers()),
-  // sembrando los usuarios demo la primera vez que el store está vacío.
+  const refreshUsers = useCallback(async () => {
+    const res = await apiFetch('/api/felmat-users');
+    if (res.ok) setUsers(await res.json());
+  }, []);
+
   useEffect(() => {
     (async () => {
-      let dbUsers = await dbManager.getAll<User>(USERS_STORE);
-      if (dbUsers.length === 0) {
-        for (const demoUser of DEMO_USERS) {
-          await dbManager.put(USERS_STORE, demoUser);
-        }
-        dbUsers = await dbManager.getAll<User>(USERS_STORE);
-      }
-      setUsers(dbUsers);
-
       const storedUser = localStorage.getItem(AUTH_STORAGE_KEY);
-      if (storedUser) {
+      const token = getAuthToken();
+      if (storedUser && token) {
         try {
-          const parsed = JSON.parse(storedUser) as User;
-          setUser(dbUsers.find(u => u.id === parsed.id) || parsed);
+          setUser(JSON.parse(storedUser) as User);
         } catch {
           localStorage.removeItem(AUTH_STORAGE_KEY);
         }
       }
-
+      await refreshUsers();
       setIsLoading(false);
     })();
-  }, []);
+  }, [refreshUsers]);
 
-  // Login
   const login = useCallback(async (email: string, password: string): Promise<boolean> => {
-    const found = users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.isActive);
-    
-    if (found && password === '123456') {
-      setUser(found);
-      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(found));
+    const res = await apiFetch('/api/felmat-login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
+    const json = await res.json();
+    if (json.result === 'ok' && json.user) {
+      setAuthToken(json.token);
+      setUser(json.user);
+      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(json.user));
+      await refreshUsers();
       return true;
     }
-    
-    // Demo login
-    if (password === 'demo') {
-      const demoUser: User = {
-        id: crypto.randomUUID(),
-        email,
-        name: 'Usuario',
-        lastName: 'Demo',
-        phone: '',
-        role: 'agent',
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      await dbManager.put(USERS_STORE, demoUser);
-      setUsers(prev => [...prev, demoUser]);
-      setUser(demoUser);
-      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(demoUser));
-      return true;
-    }
-    
     return false;
-  }, [users]);
+  }, [refreshUsers]);
 
   const logout = useCallback(() => {
+    setAuthToken(null);
     setUser(null);
     localStorage.removeItem(AUTH_STORAGE_KEY);
   }, []);
 
   const updateUser = useCallback(async (updates: Partial<User>): Promise<void> => {
     if (!user) throw new Error('No user logged in');
-    const updated = { ...user, ...updates, updatedAt: new Date().toISOString() };
-    await dbManager.put(USERS_STORE, updated);
-    setUser(updated);
-    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(updated));
-
-    // Actualizar también en la lista de usuarios
-    setUsers(prev => prev.map(u => u.id === updated.id ? updated : u));
+    const res = await apiFetch('/api/felmat-users', {
+      method: 'PUT',
+      body: JSON.stringify({ id: user.id, ...updates }),
+    });
+    const json = await res.json();
+    if (!res.ok || !json.ok) throw new Error(json.error || 'No se pudo actualizar el perfil');
+    setUser(json.user);
+    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(json.user));
+    setUsers(prev => prev.map(u => (u.id === json.user.id ? json.user : u)));
   }, [user]);
 
   const hasRole = useCallback((roles: UserRole[]): boolean => {
@@ -182,91 +100,70 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return roles.includes(user.role);
   }, [user]);
 
-  // ============================================
-  // GESTIÓN DE USUARIOS (SOLO ADMIN)
-  // ============================================
-  
   const createUser = useCallback(async (
     userData: Omit<User, 'id' | 'createdAt' | 'updatedAt'>
-  ): Promise<User> => {
-    if (!user || user.role !== 'admin') {
-      throw new Error('Solo el administrador puede crear usuarios');
-    }
-    
-    const newUser: User = {
-      ...userData,
-      id: crypto.randomUUID(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    await dbManager.put(USERS_STORE, newUser);
-    setUsers(prev => [...prev, newUser]);
-    return newUser;
-  }, [user]);
+  ): Promise<{ user: User; tempPassword: string }> => {
+    const res = await apiFetch('/api/felmat-users', {
+      method: 'POST',
+      body: JSON.stringify(userData),
+    });
+    const json = await res.json();
+    if (!res.ok || !json.ok) throw new Error(json.error || 'No se pudo crear el usuario');
+    await refreshUsers();
+    return { user: json.user, tempPassword: json.tempPassword };
+  }, [refreshUsers]);
 
   const updateUserById = useCallback(async (id: string, updates: Partial<User>): Promise<void> => {
-    if (!user || user.role !== 'admin') {
-      throw new Error('Solo el administrador puede actualizar usuarios');
-    }
-
-    const existing = await dbManager.get<User>(USERS_STORE, id);
-    if (!existing) throw new Error('Usuario no encontrado');
-    const updated = { ...existing, ...updates, updatedAt: new Date().toISOString() };
-    await dbManager.put(USERS_STORE, updated);
-    setUsers(prev => prev.map(u => u.id === id ? updated : u));
-  }, [user]);
+    const res = await apiFetch('/api/felmat-users', {
+      method: 'PUT',
+      body: JSON.stringify({ id, ...updates }),
+    });
+    const json = await res.json();
+    if (!res.ok || !json.ok) throw new Error(json.error || 'No se pudo actualizar el usuario');
+    await refreshUsers();
+  }, [refreshUsers]);
 
   const deleteUser = useCallback(async (id: string): Promise<void> => {
-    if (!user || user.role !== 'admin') {
-      throw new Error('Solo el administrador puede eliminar usuarios');
-    }
-
-    // No permitir eliminar el propio usuario admin
-    if (id === user.id) {
-      throw new Error('No puedes eliminar tu propia cuenta');
-    }
-
-    await dbManager.delete(USERS_STORE, id);
-    setUsers(prev => prev.filter(u => u.id !== id));
-  }, [user]);
+    const res = await apiFetch(`/api/felmat-users?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+    const json = await res.json();
+    if (!res.ok || !json.ok) throw new Error(json.error || 'No se pudo eliminar el usuario');
+    await refreshUsers();
+  }, [refreshUsers]);
 
   const toggleUserStatus = useCallback(async (id: string): Promise<void> => {
-    if (!user || user.role !== 'admin') {
-      throw new Error('Solo el administrador puede cambiar el estado de usuarios');
-    }
+    const res = await apiFetch('/api/felmat-users', {
+      method: 'PUT',
+      body: JSON.stringify({ id, toggleActive: true }),
+    });
+    const json = await res.json();
+    if (!res.ok || !json.ok) throw new Error(json.error || 'No se pudo cambiar el estado');
+    await refreshUsers();
+  }, [refreshUsers]);
 
-    const existing = await dbManager.get<User>(USERS_STORE, id);
-    if (!existing) throw new Error('Usuario no encontrado');
-    const updated = { ...existing, isActive: !existing.isActive, updatedAt: new Date().toISOString() };
-    await dbManager.put(USERS_STORE, updated);
-    setUsers(prev => prev.map(u => u.id === id ? updated : u));
-  }, [user]);
+  const sendCredentials = useCallback(async (userId: string, tempPassword: string): Promise<void> => {
+    const res = await apiFetch('/api/felmat-send-credentials', {
+      method: 'POST',
+      body: JSON.stringify({ userId, tempPassword }),
+    });
+    const json = await res.json();
+    if (!res.ok || !json.ok) throw new Error(json.error || 'No se pudo enviar el correo de credenciales');
+  }, []);
 
-  // ============================================
-  // PERMISOS
-  // ============================================
-  
-  const isAdmin = user?.role === 'admin';
+  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
   const isAgent = user?.role === 'agent';
-  
   const canManageUsers = isAdmin;
-  
+
   const canDeleteProperty = useCallback((propertyAgentId: string): boolean => {
     if (!user) return false;
-    // Admin puede eliminar cualquier propiedad
-    if (user.role === 'admin') return true;
-    // Agente solo puede eliminar sus propias propiedades
+    if (isAdmin) return true;
     return propertyAgentId === user.id;
-  }, [user]);
+  }, [user, isAdmin]);
 
   const canEditProperty = useCallback((propertyAgentId: string): boolean => {
     if (!user) return false;
-    // Admin puede editar cualquier propiedad
-    if (user.role === 'admin') return true;
-    // Agente solo puede editar sus propias propiedades
+    if (isAdmin) return true;
     return propertyAgentId === user.id;
-  }, [user]);
+  }, [user, isAdmin]);
 
   const canViewAllProperties = isAdmin;
   const canViewAllLeads = isAdmin;
@@ -274,25 +171,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   return (
     <AuthContext.Provider
       value={{
-        user,
-        users,
-        isAuthenticated: !!user,
-        isLoading,
-        isAdmin,
-        isAgent,
-        login,
-        logout,
-        updateUser,
-        hasRole,
-        createUser,
-        updateUserById,
-        deleteUser,
-        toggleUserStatus,
-        canManageUsers,
-        canDeleteProperty,
-        canEditProperty,
-        canViewAllProperties,
-        canViewAllLeads,
+        user, users, isAuthenticated: !!user, isLoading, isAdmin, isAgent,
+        login, logout, updateUser, hasRole, createUser, updateUserById, deleteUser,
+        toggleUserStatus, refreshUsers, sendCredentials, canManageUsers,
+        canDeleteProperty, canEditProperty, canViewAllProperties, canViewAllLeads,
       }}
     >
       {children}
@@ -308,7 +190,6 @@ export function useAuth() {
   return context;
 }
 
-// Hook para proteger rutas
 export function useRequireAuth(roles?: UserRole[]) {
   const { user, isAuthenticated, isLoading, hasRole } = useAuth();
 
@@ -317,11 +198,9 @@ export function useRequireAuth(roles?: UserRole[]) {
       window.location.href = '/login';
     }
     if (!isLoading && isAuthenticated && roles && !hasRole(roles)) {
-      // Redirigir a página no autorizada
       window.location.href = '/unauthorized';
     }
   }, [isLoading, isAuthenticated, roles, hasRole]);
 
   return { user, isLoading };
 }
-// Force update - Sun Feb 22 04:26:23 UTC 2026

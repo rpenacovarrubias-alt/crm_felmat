@@ -72,7 +72,7 @@ const initialFormData: UserFormData = {
 };
 
 export function UserManagement() {
-  const { users, createUser, updateUserById, deleteUser, toggleUserStatus, user: currentUser } = useAuth();
+  const { users, createUser, updateUserById, deleteUser, toggleUserStatus, sendCredentials, user: currentUser } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -148,7 +148,7 @@ export function UserManagement() {
           config: { ...editingUser.config, ...userConfig },
         });
       } else {
-        await createUser({
+        const { user: created, tempPassword } = await createUser({
           name: formData.name,
           lastName: formData.lastName,
           email: formData.email,
@@ -157,6 +157,12 @@ export function UserManagement() {
           isActive: formData.isActive,
           config: userConfig,
         });
+        try {
+          await sendCredentials(created.id, tempPassword);
+          alert(`Usuario creado. Le enviamos sus credenciales por correo a ${created.email}.`);
+        } catch {
+          alert(`Usuario creado, pero no se pudo enviar el correo. Contraseña temporal: ${tempPassword}`);
+        }
       }
 
       handleCloseDialog();
@@ -528,8 +534,7 @@ export function UserManagement() {
             {!editingUser && (
               <div className="p-4 bg-blue-50 rounded-lg">
                 <p className="text-sm text-blue-700">
-                  <strong>Nota:</strong> La contraseña inicial será <code className="bg-white px-2 py-0.5 rounded">123456</code>. 
-                  El usuario deberá cambiarla en su primer inicio de sesión.
+                  <strong>Nota:</strong> Se generará una contraseña temporal aleatoria y se enviará por correo al usuario.
                 </p>
               </div>
             )}
