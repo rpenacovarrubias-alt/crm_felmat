@@ -28,11 +28,17 @@ async function handleForgot(email, res) {
     const resetUrl = `${APP_URL}/restablecer?token=${encodeURIComponent(token)}`;
     // Hay que esperar este fetch: sin await, Vercel puede congelar la funcion
     // antes de que el correo salga aunque la respuesta ya sea 200.
-    await fetch(NOTIFY_WEBHOOK, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: user.name, email: user.email, resetUrl }),
-    });
+    // Atrapamos cualquier fallo (incluyendo rechazos a nivel de red) para
+    // nunca romper la respuesta generica 200 {ok:true}.
+    try {
+      await fetch(NOTIFY_WEBHOOK, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: user.name, email: user.email, resetUrl }),
+      });
+    } catch {
+      // ponytail: fallo de red al webhook no debe filtrar si el correo existe
+    }
   }
 
   return res.status(200).json({ ok: true });
