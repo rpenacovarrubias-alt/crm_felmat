@@ -204,6 +204,13 @@ export function UserManagement() {
 
   const getRoleBadge = (role: UserRole) => {
     switch (role) {
+      case 'super_admin':
+        return (
+          <Badge className="bg-amber-500 hover:bg-amber-600">
+            <Shield className="w-3 h-3 mr-1" />
+            Super Admin
+          </Badge>
+        );
       case 'admin':
         return (
           <Badge className="bg-purple-500 hover:bg-purple-600">
@@ -216,6 +223,13 @@ export function UserManagement() {
           <Badge className="bg-blue-500 hover:bg-blue-600">
             <UserIcon className="w-3 h-3 mr-1" />
             Agente
+          </Badge>
+        );
+      case 'assistant':
+        return (
+          <Badge className="bg-slate-500 hover:bg-slate-600">
+            <UserIcon className="w-3 h-3 mr-1" />
+            Asistente
           </Badge>
         );
       default:
@@ -266,7 +280,7 @@ export function UserManagement() {
         <Card>
           <CardContent className="p-4">
             <p className="text-2xl font-bold text-purple-600">
-              {users.filter(u => u.role === 'admin').length}
+              {users.filter(u => u.role === 'admin' || u.role === 'super_admin').length}
             </p>
             <p className="text-sm text-muted-foreground">Administradores</p>
           </CardContent>

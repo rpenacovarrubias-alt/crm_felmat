@@ -215,7 +215,7 @@ function NavGroupComponent({
 
 export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
   const location = useLocation();
-  const { user, logout } = useAuth();
+  const { user, logout, canManageUsers } = useAuth();
 
   const userInitials = user
     ? `${user.name?.charAt(0) || ''}${user.lastName?.charAt(0) || ''}`.toUpperCase()
@@ -352,7 +352,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
         </nav>
 
         {/* Admin Items */}
-        {user?.role === 'admin' && (
+        {canManageUsers && (
           <nav className="px-3 space-y-1 mt-4">
             <div className={cn(
               "px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider",

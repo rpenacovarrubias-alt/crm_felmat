@@ -233,7 +233,7 @@ export function PropertyForm() {
   const { user, canViewAllProperties } = useAuth();
   const { properties, create, update } = useProperties(canViewAllProperties ? undefined : user?.id);
   const { users } = useUsers();
-  const assignableAgents = users.filter(u => u.isActive && (u.role === 'agent' || u.role === 'admin'));
+  const assignableAgents = users.filter(u => u.isActive && (u.role === 'agent' || u.role === 'admin' || u.role === 'super_admin'));
 
   const isEditing = !!id;
   const existingProperty = isEditing ? properties.find(p => p.id === id) : null;
