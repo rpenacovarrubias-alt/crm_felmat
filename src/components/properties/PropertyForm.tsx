@@ -90,22 +90,31 @@ function ImageUploader({
 
   const handleFileSelect = (files: FileList | null) => {
     if (!files) return;
-    
-    Array.from(files).forEach((file, index) => {
-      if (!file.type.startsWith('image/')) return;
-      
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const newImage: PropertyImage = {
-          id: crypto.randomUUID(),
-          url: e.target?.result as string,
-          isMain: images.length === 0 && index === 0,
-          order: images.length + index,
-          caption: '',
-        };
-        onImagesChange([...images, newImage]);
-      };
-      reader.readAsDataURL(file);
+
+    const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
+    if (imageFiles.length === 0) return;
+
+    // Se leen todos los archivos primero y se agregan en un solo update: si cada
+    // FileReader llamara a onImagesChange por separado, cada callback partiria
+    // del mismo arreglo `images` "congelado" del momento del select, y el ultimo
+    // en terminar de leer pisaria a los demas -- por eso subir varias fotos a la
+    // vez solo dejaba una.
+    Promise.all(
+      imageFiles.map(file => new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target?.result as string);
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(file);
+      })),
+    ).then(urls => {
+      const newImages: PropertyImage[] = urls.map((url, i) => ({
+        id: crypto.randomUUID(),
+        url,
+        isMain: images.length === 0 && i === 0,
+        order: images.length + i,
+        caption: '',
+      }));
+      onImagesChange([...images, ...newImages]);
     });
   };
 
@@ -161,15 +170,20 @@ function ImageUploader({
       {images.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
           {images.map((image, index) => (
-            <div 
-              key={image.id} 
+            <div
+              key={image.id}
               className={cn(
                 "relative aspect-square rounded-lg overflow-hidden border-2",
                 image.isMain ? "border-primary" : "border-border"
               )}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                if (!image.isMain) setMainImage(image.id);
+              }}
+              title="Clic derecho para asignar como portada"
             >
-              <img 
-                src={image.url} 
+              <img
+                src={image.url}
                 alt={`Property ${index + 1}`}
                 className="w-full h-full object-cover"
               />
