@@ -78,8 +78,32 @@ const amenitiesList = [
   'Balcón', 'Roof garden', 'Sala de TV', 'Estudio',
 ];
 
+// Redimensiona a un maximo de 1600px por lado y reexporta como JPEG calidad
+// 0.82 -- una foto de celular de varios MB queda en unos cientos de KB.
+const MAX_IMAGE_DIMENSION = 1600;
+const IMAGE_QUALITY = 0.82;
+
+function compressImageToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, MAX_IMAGE_DIMENSION / Math.max(img.width, img.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      const ctx = canvas.getContext('2d');
+      if (!ctx) { reject(new Error('canvas_unsupported')); return; }
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL('image/jpeg', IMAGE_QUALITY));
+      URL.revokeObjectURL(img.src);
+    };
+    img.onerror = () => reject(new Error('image_load_failed'));
+    img.src = URL.createObjectURL(file);
+  });
+}
+
 // Componente para subir imágenes
-function ImageUploader({ 
+function ImageUploader({
   images, 
   onImagesChange 
 }: { 
@@ -99,14 +123,12 @@ function ImageUploader({
     // del mismo arreglo `images` "congelado" del momento del select, y el ultimo
     // en terminar de leer pisaria a los demas -- por eso subir varias fotos a la
     // vez solo dejaba una.
-    Promise.all(
-      imageFiles.map(file => new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (e) => resolve(e.target?.result as string);
-        reader.onerror = () => reject(reader.error);
-        reader.readAsDataURL(file);
-      })),
-    ).then(urls => {
+    // ponytail: las imagenes se guardan como base64 dentro del JSON de la
+    // propiedad (se decidio no migrar a un storage tipo Blob) -- Vercel
+    // rechaza requests de mas de ~4.5MB (413), asi que fotos reales de celular
+    // sin comprimir tiran el guardado con 2-3 fotos. Se re-escalan/comprimen
+    // aqui antes de convertir a base64 para que quepan muchas mas en el mismo limite.
+    Promise.all(imageFiles.map(compressImageToDataUrl)).then(urls => {
       const newImages: PropertyImage[] = urls.map((url, i) => ({
         id: crypto.randomUUID(),
         url,
