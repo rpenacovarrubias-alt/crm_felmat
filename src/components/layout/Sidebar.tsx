@@ -87,6 +87,7 @@ const propertiesGroup: NavGroup = {
     { label: 'Vinculaciones', href: '/vinculaciones', icon: Link2 },
     { label: 'Listas compartidas', href: '/listas-compartidas', icon: Share2 },
     { label: 'Desempeño', href: '/propiedades/desempeno', icon: TrendingUp },
+    { label: 'Redes Sociales', href: '/propiedades/redes-sociales', icon: Share2 },
   ],
 };
 
@@ -99,6 +100,7 @@ const adminCondominiosGroup: NavGroup = {
     { label: 'Cotizaciones', href: '/cotizaciones', icon: Receipt },
     { label: 'Anuncios', href: '/anuncios', icon: Megaphone },
     { label: 'Legal', href: '/legal/contratos', icon: Scale },
+    { label: 'Redes Sociales', href: '/condominios/redes-sociales', icon: Share2 },
   ],
 };
 
@@ -112,6 +114,7 @@ const airbnbGroup: NavGroup = {
     { label: 'Precios', href: '/airbnb/precios', icon: DollarSign },
     { label: 'Mensajes', href: '/airbnb/mensajes', icon: ClipboardList },
     { label: 'Reservas', href: '/airbnb/reservas', icon: Briefcase },
+    { label: 'Redes Sociales', href: '/airbnb/redes-sociales', icon: Share2 },
   ],
 };
 
@@ -229,6 +232,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
   const isAdminCondominiosActive = location.pathname.startsWith('/carta-presentacion') ||
     location.pathname.startsWith('/cotizaciones') ||
     location.pathname.startsWith('/admin/condominios') ||
+    location.pathname.startsWith('/condominios') ||
     location.pathname.startsWith('/legal');
 
   const isAirbnbActive = location.pathname.startsWith('/airbnb');

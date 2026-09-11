@@ -52,6 +52,8 @@ const ReportesVentasPage = lazy(() => import('@/components/reportes/ReportesVent
 const ReportesLeadsPage = lazy(() => import('@/components/reportes/ReportesLeadsPage'));
 const TiposPropiedadPage = lazy(() => import('@/components/propiedades/TiposPropiedadPage'));
 const AmenidadesPage = lazy(() => import('@/components/propiedades/AmenidadesPage'));
+const RedesSociales = lazy(() => import('@/pages/RedesSociales'));
+const SocialConfigForm = lazy(() => import('@/components/social/SocialConfigForm'));
 const PublicPropertyPage = lazy(() => import('@/components/properties/PublicPropertyPage'));
 const VinculacionesPage = lazy(() => import('@/components/vinculaciones/VinculacionesPage'));
 
@@ -102,6 +104,8 @@ function AppRoutes() {
             <Route path="/propiedades/tipos" element={<TiposPropiedadPage />} />
             <Route path="/propiedades/amenidades" element={<AmenidadesPage />} />
             <Route path="/propiedades/desempeno" element={<PropertyPerformance />} />
+            <Route path="/propiedades/redes-sociales" element={<RedesSociales section="propiedades" />} />
+            <Route path="/propiedades/redes-sociales/:platform" element={<SocialConfigForm section="propiedades" />} />
             <Route path="/propiedades/:id" element={<PropertyDetail />} />
             <Route path="/propiedades/:id/edit" element={<PropertyForm />} />
             <Route path="/estimaciones" element={<EstimacionesPage />} />
@@ -162,6 +166,8 @@ function AppRoutes() {
             <Route path="/legal/contratos/:id" element={<ContratoForm />} />
             <Route path="/legal/fianzas" element={<FianzasPage />} />
             <Route path="/legal/fianzas/nueva" element={<Navigate to="/legal/fianzas" replace />} />
+            <Route path="/condominios/redes-sociales" element={<RedesSociales section="condominios" />} />
+            <Route path="/condominios/redes-sociales/:platform" element={<SocialConfigForm section="condominios" />} />
             
             {/* Airbnb */}
             <Route path="/airbnb/anuncios" element={<Anuncios />} />
@@ -172,6 +178,8 @@ function AppRoutes() {
             <Route path="/airbnb/precios" element={<AirbnbPreciosPage />} />
             <Route path="/airbnb/mensajes" element={<AirbnbMensajesPage />} />
             <Route path="/airbnb/reservas" element={<AirbnbReservasPage />} />
+            <Route path="/airbnb/redes-sociales" element={<RedesSociales section="airbnb" />} />
+            <Route path="/airbnb/redes-sociales/:platform" element={<SocialConfigForm section="airbnb" />} />
             
             {/* Reportes */}
             <Route path="/reportes/ventas" element={<ReportesVentasPage />} />
