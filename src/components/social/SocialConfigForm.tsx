@@ -20,6 +20,7 @@ export function SocialConfigForm({ section }: { section: SocialSection }) {
   const platform = platformParam === 'facebook' || platformParam === 'instagram' ? platformParam : null;
 
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [saving, setSaving] = useState(false);
   const [enabled, setEnabled] = useState(false);
   const [appId, setAppId] = useState('');
@@ -31,8 +32,10 @@ export function SocialConfigForm({ section }: { section: SocialSection }) {
 
   const sectionHome = `/${section}/redes-sociales`;
 
-  useEffect(() => {
-    if (!platform) { navigate(sectionHome, { replace: true }); return; }
+  const loadConfig = () => {
+    if (!platform) return;
+    setLoading(true);
+    setLoadError(false);
     getSocialConfig(section, platform).then((cfg) => {
       setEnabled(cfg.enabled);
       setAppId(cfg.appId ?? '');
@@ -42,8 +45,15 @@ export function SocialConfigForm({ section }: { section: SocialSection }) {
       setLoading(false);
     }).catch(() => {
       toast.error('No se pudo cargar la configuración');
+      setLoadError(true);
       setLoading(false);
     });
+  };
+
+  useEffect(() => {
+    if (!platform) { navigate(sectionHome, { replace: true }); return; }
+    loadConfig();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [section, platform, navigate]);
 
   if (!platform) return null;
@@ -91,6 +101,13 @@ export function SocialConfigForm({ section }: { section: SocialSection }) {
 
       {loading ? (
         <p className="text-sm text-muted-foreground">Cargando…</p>
+      ) : loadError ? (
+        <Card>
+          <CardContent className="space-y-4 pt-6">
+            <p className="text-sm text-muted-foreground">No se pudo cargar la configuración. Intenta de nuevo.</p>
+            <Button variant="outline" onClick={loadConfig}>Reintentar</Button>
+          </CardContent>
+        </Card>
       ) : (
         <Card>
           <CardHeader>
