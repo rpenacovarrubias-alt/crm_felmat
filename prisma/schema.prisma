@@ -159,3 +159,20 @@ model FelmatPropertyShare {
 
   @@map("felmat_property_shares")
 }
+
+model FelmatSocialConfig {
+  id          String   @id @default(cuid())
+  section     String   // 'propiedades' | 'condominios' | 'airbnb'
+  platform    String   // 'facebook' | 'instagram'
+  enabled     Boolean  @default(false)
+  appId       String?
+  appSecret   String?
+  accountId   String?  // Page ID (facebook) o Instagram Business Account ID (instagram)
+  accessToken String?
+  updatedBy   String
+  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now())
+
+  @@unique([section, platform])
+  @@map("felmat_social_config")
+}
