@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, Facebook, Instagram, Save } from 'lucide-react';
 import { getSocialConfig, saveSocialConfig, type SocialPlatform, type SocialSection } from '@/lib/socialConfigApi';
+import { useAuth } from '@/hooks/useAuth';
+import { useUsers } from '@/hooks/useDatabase';
 
 const PLATFORM_LABELS: Record<SocialPlatform, { title: string; icon: typeof Facebook; accountLabel: string; accountPlaceholder: string }> = {
   facebook: { title: 'Facebook', icon: Facebook, accountLabel: 'Page ID', accountPlaceholder: 'ID de tu Página de Facebook' },
@@ -18,6 +21,13 @@ export function SocialConfigForm({ section }: { section: SocialSection }) {
   const navigate = useNavigate();
   const { platform: platformParam } = useParams<{ platform: string }>();
   const platform = platformParam === 'facebook' || platformParam === 'instagram' ? platformParam : null;
+
+  const { user } = useAuth();
+  const { users } = useUsers();
+  const isSuperAdmin = user?.role === 'super_admin';
+  const [searchParams, setSearchParams] = useSearchParams();
+  const viewAsUserId = searchParams.get('userId') || user?.id || '';
+  const effectiveUserId = isSuperAdmin && viewAsUserId !== user?.id ? viewAsUserId : undefined;
 
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -36,7 +46,7 @@ export function SocialConfigForm({ section }: { section: SocialSection }) {
     if (!platform) return;
     setLoading(true);
     setLoadError(false);
-    getSocialConfig(section, platform).then((cfg) => {
+    getSocialConfig(section, platform, effectiveUserId).then((cfg) => {
       setEnabled(cfg.enabled);
       setAppId(cfg.appId ?? '');
       setAccountId(cfg.accountId ?? '');
@@ -56,7 +66,7 @@ export function SocialConfigForm({ section }: { section: SocialSection }) {
     if (!platform) { navigate(sectionHome, { replace: true }); return; }
     loadConfig();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [section, platform, navigate]);
+  }, [section, platform, navigate, viewAsUserId]);
 
   if (!platform) return null;
 
@@ -73,6 +83,7 @@ export function SocialConfigForm({ section }: { section: SocialSection }) {
         accountId,
         ...(appSecret ? { appSecret } : {}),
         ...(accessToken ? { accessToken } : {}),
+        ...(effectiveUserId ? { userId: effectiveUserId } : {}),
       });
       setHasAppSecret(saved.hasAppSecret);
       setAccessTokenPreview(saved.accessTokenPreview);
@@ -88,6 +99,26 @@ export function SocialConfigForm({ section }: { section: SocialSection }) {
 
   return (
     <div className="space-y-6">
+      {isSuperAdmin && (
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground whitespace-nowrap">Viendo como:</span>
+          <Select
+            value={viewAsUserId}
+            onValueChange={(v) => setSearchParams(v === user?.id ? {} : { userId: v })}
+          >
+            <SelectTrigger className="w-56">
+              <SelectValue placeholder="Yo" />
+            </SelectTrigger>
+            <SelectContent>
+              {user?.id && <SelectItem value={user.id}>Yo</SelectItem>}
+              {users.filter((a) => a.isActive && a.id !== user?.id).map((a) => (
+                <SelectItem key={a.id} value={a.id}>{a.name} {a.lastName}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
       <div className="flex items-center gap-4">
         <Button variant="outline" size="icon" onClick={() => navigate(sectionHome)}>
           <ArrowLeft className="w-4 h-4" />
