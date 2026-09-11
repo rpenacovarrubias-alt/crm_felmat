@@ -9,6 +9,7 @@ export interface SocialConfig {
   accountId: string | null;
   hasAppSecret: boolean;
   accessTokenPreview: string | null;
+  userId: string | null;
 }
 
 export interface SaveSocialConfigInput {

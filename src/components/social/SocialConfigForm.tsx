@@ -26,7 +26,13 @@ export function SocialConfigForm({ section }: { section: SocialSection }) {
   const { users } = useUsers();
   const isSuperAdmin = user?.role === 'super_admin';
   const [searchParams, setSearchParams] = useSearchParams();
-  const viewAsUserId = searchParams.get('userId') || user?.id || '';
+  // ponytail: un userId en la URL que ya no corresponde a un agente activo
+  // (bookmark viejo, agente desactivado en otra pestaña) cae al propio
+  // usuario en vez de quedarse apuntando en silencio a la fila de otro --
+  // ver Finding 4 del review.
+  const requestedUserId = searchParams.get('userId');
+  const isKnownAgent = requestedUserId ? users.some((u) => u.isActive && u.id === requestedUserId) : false;
+  const viewAsUserId = (isKnownAgent && requestedUserId) || user?.id || '';
   const effectiveUserId = isSuperAdmin && viewAsUserId !== user?.id ? viewAsUserId : undefined;
 
   const [loading, setLoading] = useState(true);

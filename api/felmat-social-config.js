@@ -9,7 +9,7 @@ const PLATFORMS = ['facebook', 'instagram'];
 
 function toPublic(row, section, platform) {
   if (!row) {
-    return { section, platform, enabled: false, appId: null, accountId: null, hasAppSecret: false, accessTokenPreview: null };
+    return { section, platform, enabled: false, appId: null, accountId: null, hasAppSecret: false, accessTokenPreview: null, userId: null };
   }
   return {
     section: row.section,
@@ -19,15 +19,19 @@ function toPublic(row, section, platform) {
     accountId: row.accountId,
     hasAppSecret: !!row.appSecret,
     accessTokenPreview: maskToken(row.accessToken),
+    userId: row.userId,
   };
 }
 
 // ponytail: resuelve de quien son las credenciales que se van a leer/escribir.
 // Por defecto siempre el propio usuario -- un userId de otra persona solo se
 // respeta si quien pide es super_admin (soporte). Nunca se confia en el body
-// ni en el query de un usuario normal para esto.
-function resolveTargetUserId(session, requestedUserId) {
-  if (!requestedUserId || requestedUserId === session.sub) return { userId: session.sub, forbidden: false };
+// ni en el query de un usuario normal para esto. Un requestedUserId que no
+// sea string (ej. array por query param duplicado) se trata como ausente.
+export function resolveTargetUserId(session, requestedUserId) {
+  if (typeof requestedUserId !== 'string' || !requestedUserId || requestedUserId === session.sub) {
+    return { userId: session.sub, forbidden: false };
+  }
   if (isSuperAdmin(session.role)) return { userId: requestedUserId, forbidden: false };
   return { userId: session.sub, forbidden: true };
 }
@@ -61,7 +65,10 @@ export default async function handler(req, res) {
     // Un userId de otro usuario en el body solo se respeta si eres
     // super_admin; para cualquier otro rol se ignora en silencio (se sigue
     // guardando en la fila propia) -- no se rechaza la request por esto.
-    const targetUserId = b.userId && isSuperAdmin(session.role) ? b.userId : session.sub;
+    // forbidden se ignora a proposito aqui: resolveTargetUserId ya cae a
+    // session.sub en ese caso, que es exactamente el fallback silencioso
+    // que el PUT necesita.
+    const { userId: targetUserId } = resolveTargetUserId(session, b.userId);
 
     // appSecret/accessToken solo se tocan si vienen en el body -- omitirlos
     // conserva el valor guardado, mandar '' los borra. Logica en

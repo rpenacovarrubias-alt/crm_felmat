@@ -33,6 +33,7 @@ export function RedesSociales({ section }: { section: SocialSection }) {
 
   useEffect(() => {
     const targetUserId = isSuperAdmin && viewAsUserId && viewAsUserId !== user?.id ? viewAsUserId : undefined;
+    setConfigs([]);
     listSocialConfigs(targetUserId)
       .then((all) => setConfigs(all.filter((c) => c.section === section)))
       .catch(() => toast.error('No se pudo cargar el estado de las conexiones. Los datos mostrados pueden estar desactualizados.'));
