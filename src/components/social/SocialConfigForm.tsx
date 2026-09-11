@@ -40,6 +40,8 @@ export function SocialConfigForm({ section }: { section: SocialSection }) {
       setEnabled(cfg.enabled);
       setAppId(cfg.appId ?? '');
       setAccountId(cfg.accountId ?? '');
+      setAppSecret('');
+      setAccessToken('');
       setHasAppSecret(cfg.hasAppSecret);
       setAccessTokenPreview(cfg.accessTokenPreview);
       setLoading(false);

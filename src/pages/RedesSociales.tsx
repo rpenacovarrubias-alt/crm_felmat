@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Facebook, Instagram } from 'lucide-react';
@@ -14,7 +15,9 @@ export function RedesSociales({ section }: { section: SocialSection }) {
   const [configs, setConfigs] = useState<SocialConfig[]>([]);
 
   useEffect(() => {
-    listSocialConfigs().then((all) => setConfigs(all.filter((c) => c.section === section)));
+    listSocialConfigs()
+      .then((all) => setConfigs(all.filter((c) => c.section === section)))
+      .catch(() => toast.error('No se pudo cargar el estado de las conexiones. Los datos mostrados pueden estar desactualizados.'));
   }, [section]);
 
   const isEnabled = (platform: 'facebook' | 'instagram') =>

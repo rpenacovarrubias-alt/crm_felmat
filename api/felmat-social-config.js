@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { getSession } from './_lib/session.js';
-import { maskToken } from './_lib/socialConfigMask.js';
+import { maskToken, secretFieldUpdate } from './_lib/socialConfigMask.js';
 
 const prisma = new PrismaClient();
 
@@ -43,18 +43,21 @@ export default async function handler(req, res) {
     if (!SECTIONS.includes(b.section)) return res.status(400).json({ error: 'invalid_section' });
     if (!PLATFORMS.includes(b.platform)) return res.status(400).json({ error: 'invalid_platform' });
 
-    // ponytail: appSecret/accessToken solo se tocan si vienen en el body --
-    // omitirlos conserva el valor guardado, mandar '' los borra. Esto evita
-    // que el formulario tenga que re-mandar el secret completo cada vez que
-    // el usuario solo cambia el switch de "enabled".
+    // appSecret/accessToken solo se tocan si vienen en el body -- omitirlos
+    // conserva el valor guardado, mandar '' los borra. Esto evita que el
+    // formulario tenga que re-mandar el secret completo cada vez que el
+    // usuario solo cambia el switch de "enabled". Logica en secretFieldUpdate
+    // (api/_lib/socialConfigMask.js) para poder probarla sin Prisma.
     const data = {
       enabled: !!b.enabled,
-      appId: b.appId ?? null,
-      accountId: b.accountId ?? null,
+      appId: b.appId || null,
+      accountId: b.accountId || null,
       updatedBy: session.sub,
     };
-    if ('appSecret' in b) data.appSecret = b.appSecret || null;
-    if ('accessToken' in b) data.accessToken = b.accessToken || null;
+    const appSecretUpdate = secretFieldUpdate(b, 'appSecret');
+    if (appSecretUpdate.touched) data.appSecret = appSecretUpdate.value;
+    const accessTokenUpdate = secretFieldUpdate(b, 'accessToken');
+    if (accessTokenUpdate.touched) data.accessToken = accessTokenUpdate.value;
 
     const row = await prisma.felmatSocialConfig.upsert({
       where: { section_platform: { section: b.section, platform: b.platform } },
