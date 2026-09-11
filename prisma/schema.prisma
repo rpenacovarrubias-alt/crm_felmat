@@ -99,6 +99,7 @@ model FelmatUser {
   updatedAt      DateTime  @updatedAt
   properties     FelmatProperty[]
   shares         FelmatPropertyShare[]
+  socialConfigs  FelmatSocialConfig[]
 
   @@map("felmat_users")
 }
@@ -162,6 +163,8 @@ model FelmatPropertyShare {
 
 model FelmatSocialConfig {
   id          String   @id @default(cuid())
+  userId      String
+  user        FelmatUser @relation(fields: [userId], references: [id], onDelete: Cascade)
   section     String   // 'propiedades' | 'condominios' | 'airbnb'
   platform    String   // 'facebook' | 'instagram'
   enabled     Boolean  @default(false)
@@ -173,6 +176,6 @@ model FelmatSocialConfig {
   updatedAt   DateTime @updatedAt
   createdAt   DateTime @default(now())
 
-  @@unique([section, platform])
+  @@unique([userId, section, platform])
   @@map("felmat_social_config")
 }
