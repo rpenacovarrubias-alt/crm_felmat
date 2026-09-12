@@ -37,7 +37,10 @@
 | `src/components/anuncios/ListaAnuncios.tsx` | Modificar | `GridView`/`ListView` no truenan con campos nulos; miniatura prefiere `imagenCompuestaUrl` |
 | `src/components/anuncios/AnuncioDetail.tsx` | Modificar | Igual null-safety; imagen principal prefiere `imagenCompuestaUrl` |
 | `src/components/anuncios/DiapositivasEditor.tsx` | Crear | Editor de 1 a 10 diapositivas (foto + encabezado + subtítulo + vista previa real + reordenar/eliminar) |
-| `src/components/anuncios/AnuncioForm.tsx` | Modificar | Rama `categoria === 'SERVICIO'`: Información general + Texto de la publicación (con emojis) + `DiapositivasEditor` |
+| `src/components/anuncios/AnuncioForm.tsx` | Modificar (2 veces: Task 10 y Task 11) | Rama `categoria === 'SERVICIO'`; luego usa `resolverContextoAnuncio` para soportar también los 2 canales de Propiedades |
+| `src/components/anuncios/Anuncios.tsx` | Modificar | Usa `resolverContextoAnuncio` en vez de derivar `modo` a mano; pasa `categoriaFiltro`/`rutaBase` a `ListaAnuncios` |
+| `src/components/layout/Sidebar.tsx` | Modificar | Agrega "Ficha" y "Anuncios" al grupo Propiedades |
+| `src/App.tsx` | Modificar | 8 rutas nuevas: `/propiedades/ficha[...]` y `/propiedades/anuncios[...]` |
 
 ---
 
@@ -1741,7 +1744,345 @@ EOF
 
 ---
 
-### Task 11: Verificación final end-to-end
+### Task 11: Propiedades — dos canales, "Ficha" y "Anuncios"
+
+**Files:**
+- Modify: `src/lib/anunciosApi.ts` (agrega `resolverContextoAnuncio`, `'propiedades'` a `ModoAnuncio`, `categoria` a `FiltrosAnuncios`)
+- Modify: `api/anuncios.js` (filtro `categoria` en GET)
+- Modify: `src/components/anuncios/Anuncios.tsx`
+- Modify: `src/components/anuncios/ListaAnuncios.tsx`
+- Modify: `src/components/anuncios/AnuncioForm.tsx`
+- Modify: `src/components/anuncios/AnuncioDetail.tsx`
+- Modify: `src/components/layout/Sidebar.tsx`
+- Modify: `src/App.tsx`
+
+**Interfaces:**
+- Consumes: el `AnuncioForm.tsx` con rama `categoria === 'SERVICIO'` de Task 10, `ModoAnuncio`/`CategoriaAnuncio`/`FiltrosAnuncios` de Task 4.
+- Produces: `resolverContextoAnuncio(pathname: string): { modo: ModoAnuncio; categoria: CategoriaAnuncio; rutaBase: string }` -- único punto donde se decide modo/categoría/ruta a partir de la URL, usado por los 4 componentes de Anuncios. Rutas nuevas `/propiedades/ficha[...]` y `/propiedades/anuncios[...]`.
+
+- [ ] **Step 1: Agregar `resolverContextoAnuncio` y extender los tipos en `anunciosApi.ts`**
+
+En `src/lib/anunciosApi.ts`, cambia:
+
+```typescript
+export type ModoAnuncio = 'admin' | 'airbnb' | 'propiedades';
+```
+
+Agrega `categoria` a `FiltrosAnuncios`:
+
+```typescript
+export interface FiltrosAnuncios {
+  agentId?: string;
+  modo?: ModoAnuncio;
+  categoria?: CategoriaAnuncio;
+  estado?: string;
+  tipo?: string;
+  modalidad?: string;
+  q?: string;
+  ordenar?: string;
+}
+```
+
+Y agrega, después de las interfaces (antes de `const API_KEY = ...`):
+
+```typescript
+export interface ContextoAnuncio {
+  modo: ModoAnuncio;
+  categoria: CategoriaAnuncio;
+  rutaBase: string;
+}
+
+// Único lugar que decide modo/categoría/ruta a partir de la URL -- lo usan
+// Anuncios.tsx, ListaAnuncios.tsx, AnuncioForm.tsx y AnuncioDetail.tsx.
+// Condominios y Airbnb tienen una categoría fija por modo; Propiedades es
+// el primer caso con las dos categorías bajo el mismo modo, distinguidas
+// por la ruta en vez de por el modo.
+export function resolverContextoAnuncio(pathname: string): ContextoAnuncio {
+  if (pathname.startsWith('/airbnb')) {
+    return { modo: 'airbnb', categoria: 'PROPIEDAD', rutaBase: '/airbnb/anuncios' };
+  }
+  if (pathname.startsWith('/propiedades/ficha')) {
+    return { modo: 'propiedades', categoria: 'PROPIEDAD', rutaBase: '/propiedades/ficha' };
+  }
+  if (pathname.startsWith('/propiedades/anuncios')) {
+    return { modo: 'propiedades', categoria: 'SERVICIO', rutaBase: '/propiedades/anuncios' };
+  }
+  return { modo: 'admin', categoria: 'SERVICIO', rutaBase: '/anuncios' };
+}
+```
+
+Y en `listarAnuncios`, agrega `categoria` al querystring (junto a los demás `if (v)`):
+
+```typescript
+export function listarAnuncios(filtros: FiltrosAnuncios): Promise<Anuncio[]> {
+  const qs = new URLSearchParams();
+  Object.entries(filtros).forEach(([k, v]) => { if (v) qs.set(k, v); });
+  return apiFetch(`/api/anuncios?${qs.toString()}`);
+}
+```
+
+(esta función no cambia -- `Object.entries` ya recoge `categoria` automáticamente en cuanto se agrega a `FiltrosAnuncios` y se le pasa un valor; se deja aquí solo para confirmar que no hace falta tocarla.)
+
+- [ ] **Step 2: Filtrar por `categoria` en `api/anuncios.js` (GET)**
+
+En `api/anuncios.js`, dentro del bloque `GET`, cambia:
+
+```javascript
+      const { estado, tipo, modalidad, modo, agentId, q: busqueda, ordenar = 'recientes' } = req.query;
+
+      const where = {};
+      if (estado && estado !== ' ') where.estado = estado;
+      if (tipo && tipo !== ' ') where.tipoPropiedad = tipo;
+      if (modalidad && modalidad !== ' ') where.modalidadRenta = modalidad;
+      if (modo) where.modo = modo;
+      if (agentId) where.agentId = agentId;
+```
+
+por:
+
+```javascript
+      const { estado, tipo, modalidad, modo, categoria, agentId, q: busqueda, ordenar = 'recientes' } = req.query;
+
+      const where = {};
+      if (estado && estado !== ' ') where.estado = estado;
+      if (tipo && tipo !== ' ') where.tipoPropiedad = tipo;
+      if (modalidad && modalidad !== ' ') where.modalidadRenta = modalidad;
+      if (modo) where.modo = modo;
+      if (categoria) where.categoria = categoria;
+      if (agentId) where.agentId = agentId;
+```
+
+- [ ] **Step 3: `Anuncios.tsx` usa el helper**
+
+Reemplaza el archivo completo:
+
+```tsx
+import { useLocation } from 'react-router-dom';
+import ListaAnuncios from './ListaAnuncios';
+import { resolverContextoAnuncio } from '@/lib/anunciosApi';
+
+export default function Anuncios() {
+  const location = useLocation();
+  const { modo, categoria, rutaBase } = resolverContextoAnuncio(location.pathname);
+  return <ListaAnuncios modo={modo} categoriaFiltro={categoria} rutaBase={rutaBase} />;
+}
+```
+
+- [ ] **Step 4: `ListaAnuncios.tsx` acepta `categoriaFiltro`/`rutaBase` y ya no arma `basePath` a mano**
+
+Cambia la firma (línea 69) y el cómputo de `basePath` (línea 84):
+
+```tsx
+export default function ListaAnuncios({
+  modo = 'admin',
+  categoriaFiltro,
+  rutaBase = '',
+}: {
+  modo?: ModoAnuncio;
+  categoriaFiltro?: CategoriaAnuncio;
+  rutaBase?: string;
+}) {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [anuncios, setAnuncios] = useState<Anuncio[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
+  const [filters, setFilters] = useState({
+    busqueda: '', estado: '', tipo: '', modalidad: '', ordenar: 'recientes',
+  });
+  const [anuncioEliminar, setAnuncioEliminar] = useState<Anuncio | null>(null);
+  const [anuncioPublicar, setAnuncioPublicar] = useState<Anuncio | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+
+  const basePath = rutaBase;
+```
+
+Agrega el import de los tipos (junto al import existente de `anunciosApi`):
+
+```tsx
+import {
+  listarAnuncios, eliminarAnuncio, duplicarAnuncio, publicarAnuncio,
+  type Anuncio, type ModoAnuncio, type CategoriaAnuncio,
+} from '@/lib/anunciosApi';
+```
+
+En `cargarAnuncios`, agrega `categoria: categoriaFiltro` a la llamada:
+
+```tsx
+      const data = await listarAnuncios({
+        agentId: user.id,
+        modo,
+        categoria: categoriaFiltro,
+        estado: filters.estado,
+        tipo: filters.tipo,
+        modalidad: filters.modalidad,
+        q: filters.busqueda,
+        ordenar: filters.ordenar,
+      });
+```
+
+Y añade `categoriaFiltro` al arreglo de dependencias de ese `useCallback` (junto a `user`, `modo`, y los `filters.*` que ya estén ahí).
+
+Por último, en las 6 líneas que usan `` `${basePath}/anuncios...` `` (las que aparecían en las líneas 135, 202, 203, 306, 307, 336 y 373 antes de esta tarea), quita el segmento `/anuncios` literal -- por ejemplo:
+
+```tsx
+navigate(`${basePath}/anuncios/${nuevo.id}/editar`);
+```
+
+pasa a:
+
+```tsx
+navigate(`${basePath}/${nuevo.id}/editar`);
+```
+
+y aplica el mismo cambio (quitar el `/anuncios` literal que sigue a `${basePath}`) en cada una de esas líneas, incluyendo las dos que navegan a `` `${basePath}/anuncios/nuevo` `` → `` `${basePath}/nuevo` ``.
+
+Por último, generaliza el badge de Task 8 -- busca la cadena `Servicio de administración` (aparece dos veces, en `GridView` y en `ListView`) y cámbiala por `Anuncio`:
+
+```tsx
+                <Badge variant="outline" className="text-xs bg-gray-100 text-gray-800 mb-3">Anuncio</Badge>
+```
+
+```tsx
+                        <span className="px-2 py-0.5 rounded-md text-xs font-medium border bg-gray-100 text-gray-800">Anuncio</span>
+```
+
+- [ ] **Step 5: `AnuncioForm.tsx` usa el helper**
+
+Reemplaza:
+
+```tsx
+  const modo = location.pathname.startsWith('/airbnb') ? 'airbnb' : 'admin';
+  const basePath = modo === 'admin' ? '' : '/airbnb';
+  const isEditing = !!id;
+  // /anuncios (Condominios) crea SERVICIO desde ahora; /airbnb sigue en PROPIEDAD.
+  const categoriaInicial: CategoriaAnuncio = modo === 'admin' ? 'SERVICIO' : 'PROPIEDAD';
+```
+
+por:
+
+```tsx
+  const { modo, categoria: categoriaInicial, rutaBase: basePath } = resolverContextoAnuncio(location.pathname);
+  const isEditing = !!id;
+```
+
+Actualiza el import de `anunciosApi` para traer `resolverContextoAnuncio`:
+
+```tsx
+import {
+  obtenerAnuncio, crearAnuncio, actualizarAnuncio, resolverContextoAnuncio,
+  type Anuncio, type ImagenAnuncio, type CategoriaAnuncio,
+} from '@/lib/anunciosApi';
+```
+
+Y en las 4 líneas que navegan a `` `${basePath}/anuncios` `` (en el `.catch()` del `useEffect`, en `handleSubmit` tras guardar, y en el botón "Cancelar"/flecha de regreso), quita el `/anuncios` literal -- quedan como `navigate(basePath)`.
+
+- [ ] **Step 6: `AnuncioDetail.tsx` usa el helper**
+
+Reemplaza:
+
+```tsx
+  const modo = location.pathname.startsWith('/airbnb') ? 'airbnb' : 'admin';
+  const basePath = modo === 'admin' ? '' : '/airbnb';
+```
+
+por:
+
+```tsx
+  const { rutaBase: basePath } = resolverContextoAnuncio(location.pathname);
+```
+
+Actualiza el import:
+
+```tsx
+import {
+  obtenerAnuncio, publicarAnuncio, eliminarAnuncio, duplicarAnuncio, resolverContextoAnuncio,
+  type Anuncio,
+} from '@/lib/anunciosApi';
+```
+
+Y en las 3 líneas que arman `` `${basePath}/anuncios...` `` (volver a la lista cuando no se encuentra el anuncio, el botón de flecha de regreso, y `navigate` tras editar), quita el `/anuncios` literal.
+
+- [ ] **Step 7: Sidebar -- dos entradas nuevas en el grupo Propiedades**
+
+En `src/components/layout/Sidebar.tsx`, dentro de `propertiesGroup.items` (línea 84-91), agrega dos entradas antes de "Redes Sociales":
+
+```tsx
+const propertiesGroup: NavGroup = {
+  label: 'Propiedades',
+  icon: Building2,
+  items: [
+    { label: 'Inventario', href: '/propiedades', icon: Package },
+    { label: 'Estimaciones', href: '/estimaciones', icon: Calculator },
+    { label: 'Vinculaciones', href: '/vinculaciones', icon: Link2 },
+    { label: 'Listas compartidas', href: '/listas-compartidas', icon: Share2 },
+    { label: 'Desempeño', href: '/propiedades/desempeno', icon: TrendingUp },
+    { label: 'Ficha', href: '/propiedades/ficha', icon: FileText },
+    { label: 'Anuncios', href: '/propiedades/anuncios', icon: Megaphone },
+    { label: 'Redes Sociales', href: '/propiedades/redes-sociales', icon: Share2 },
+  ],
+};
+```
+
+`FileText` y `Megaphone` ya están importados en este archivo (los usa `adminCondominiosGroup`), no hace falta agregar ningún import. `isPropertiesActive` (línea 227) ya cubre estas rutas porque hace `location.pathname.startsWith('/propiedades')`.
+
+- [ ] **Step 8: 8 rutas nuevas en `App.tsx`**
+
+Junto a las rutas existentes de `/propiedades/*` (después de la línea 108, `<Route path="/propiedades/redes-sociales/:platform" .../>`), agrega:
+
+```tsx
+            <Route path="/propiedades/ficha" element={<Anuncios />} />
+            <Route path="/propiedades/ficha/nuevo" element={<AnuncioForm />} />
+            <Route path="/propiedades/ficha/:id" element={<AnuncioDetail />} />
+            <Route path="/propiedades/ficha/:id/editar" element={<AnuncioForm />} />
+            <Route path="/propiedades/anuncios" element={<Anuncios />} />
+            <Route path="/propiedades/anuncios/nuevo" element={<AnuncioForm />} />
+            <Route path="/propiedades/anuncios/:id" element={<AnuncioDetail />} />
+            <Route path="/propiedades/anuncios/:id/editar" element={<AnuncioForm />} />
+```
+
+`Anuncios`, `AnuncioForm` y `AnuncioDetail` ya están importados (línea 37-39) y usados para las rutas de Condominios/Airbnb -- no hace falta ningún import nuevo.
+
+- [ ] **Step 9: Verificar que compila**
+
+Run: `npx tsc --noEmit`
+Expected: sin errores.
+
+- [ ] **Step 10: Verificación manual en el navegador**
+
+Con sesión iniciada:
+
+1. `/propiedades/ficha/nuevo` -- confirmar que el formulario pide colonia/precio/recámaras (categoría PROPIEDAD), y que "Cancelar"/guardar regresan a `/propiedades/ficha`, no a `/propiedades/ficha/anuncios` ni a `/anuncios`.
+2. `/propiedades/anuncios/nuevo` -- confirmar que se ve igual al editor de diapositivas de Condominios (título + caption con emojis + diapositivas), y que guardar regresa a `/propiedades/anuncios`.
+3. Crear un anuncio en cada canal y confirmar que `/propiedades/ficha` NO muestra el que se creó en `/propiedades/anuncios`, y viceversa.
+4. Repetir una pasada rápida por `/anuncios` (Condominios) y `/airbnb/anuncios` -- confirmar que se comportan exactamente igual que antes de esta tarea (mismo `rutaBase` de siempre, solo que ahora calculado por `resolverContextoAnuncio` en vez de la lógica ad-hoc anterior).
+
+- [ ] **Step 11: Commit**
+
+```bash
+git add src/lib/anunciosApi.ts api/anuncios.js src/components/anuncios/Anuncios.tsx \
+  src/components/anuncios/ListaAnuncios.tsx src/components/anuncios/AnuncioForm.tsx \
+  src/components/anuncios/AnuncioDetail.tsx src/components/layout/Sidebar.tsx src/App.tsx
+git commit -m "$(cat <<'EOF'
+feat: Propiedades gana dos canales de publicacion -- Ficha y Anuncios
+
+Ficha (/propiedades/ficha) es categoria PROPIEDAD, igual a como ya
+funciona Airbnb; Anuncios (/propiedades/anuncios) es categoria
+SERVICIO, el mismo editor multi-diapositiva de Condominios. Se agrega
+resolverContextoAnuncio() como unico punto que decide modo/categoria/
+ruta a partir de la URL, reemplazando 3 copias sueltas del mismo
+ternario que existian antes de esta tarea.
+
+Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
+EOF
+)"
+```
+
+---
+
+### Task 12: Verificación final end-to-end
 
 **Files:** ninguno nuevo -- solo validación de todo lo anterior en conjunto.
 
@@ -1759,6 +2100,7 @@ Repetir, en orden, los 5 puntos de la sección "Prueba" de `docs/superpowers/spe
 3. Confirmar que `imagenCompuestaUrl` de cada diapositiva responde `200` con `Content-Type: image/jpeg` al abrirla directamente.
 4. Confirmar que `ListaAnuncios.tsx` y `AnuncioDetail.tsx` no truenan y se ven razonables para este anuncio.
 5. Verificación visual manual del editor de diapositivas ya cubierta en Task 10, Step 4 -- reconfirmar aquí que sigue viéndose bien después de todos los cambios posteriores.
+6. Repetir el punto 2 pero desde `/propiedades/anuncios/nuevo`, y repetir el punto 1 (nada debe romperse) también desde `/propiedades/ficha/nuevo`. Confirmar que ambos canales de Propiedades quedan separados entre sí (Task 11, Step 10).
 
 - [ ] **Step 3: Informar al usuario y cerrar la pieza**
 
