@@ -2,27 +2,29 @@
 // FORMULARIO DE ANUNCIO (crear/editar) - admin y airbnb comparten esta página
 // ============================================
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import {
   obtenerAnuncio, crearAnuncio, actualizarAnuncio,
-  type Anuncio, type ImagenAnuncio,
+  type Anuncio, type ImagenAnuncio, type CategoriaAnuncio,
 } from '@/lib/anunciosApi';
 import { TIPOS_PROPIEDAD, MODALIDADES } from './ListaAnuncios';
+import { DiapositivasEditor } from './DiapositivasEditor';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { ArrowLeft, Save, Upload, Star, X, Loader2 } from 'lucide-react';
+import { ArrowLeft, Save, Upload, Star, X, Loader2, Smile } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import EmojiPicker, { type EmojiClickData } from 'emoji-picker-react';
 
 function generateSlug(titulo: string): string {
   return titulo
@@ -105,6 +107,48 @@ function ImagenesUploader({ imagenes, onChange }: { imagenes: ImagenAnuncio[]; o
   );
 }
 
+// Textarea nativo (no el wrapper de shadcn, que no reenvía ref) para poder
+// insertar el emoji en la posición del cursor en vez de al final.
+function CaptionConEmojis({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+  const [open, setOpen] = useState(false);
+
+  const insertarEmoji = (data: EmojiClickData) => {
+    const el = ref.current;
+    if (!el) { onChange(value + data.emoji); return; }
+    const inicio = el.selectionStart ?? value.length;
+    const fin = el.selectionEnd ?? value.length;
+    const nuevo = value.slice(0, inicio) + data.emoji + value.slice(fin);
+    onChange(nuevo);
+    setOpen(false);
+    requestAnimationFrame(() => {
+      el.focus();
+      el.selectionStart = el.selectionEnd = inicio + data.emoji.length;
+    });
+  };
+
+  return (
+    <div className="relative">
+      <textarea
+        ref={ref}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        rows={5}
+        placeholder="Escribe el texto que acompaña al carrusel..."
+        className="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 flex field-sizing-content min-h-16 w-full rounded-md border bg-transparent px-3 py-2 pr-12 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] md:text-sm"
+      />
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button type="button" variant="ghost" size="icon" className="absolute top-1 right-1 h-8 w-8"><Smile className="w-4 h-4" /></Button>
+        </PopoverTrigger>
+        <PopoverContent align="end" className="p-0 w-auto">
+          <EmojiPicker onEmojiClick={insertarEmoji} />
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+}
+
 export function AnuncioForm() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -113,9 +157,12 @@ export function AnuncioForm() {
   const modo = location.pathname.startsWith('/airbnb') ? 'airbnb' : 'admin';
   const basePath = modo === 'admin' ? '' : '/airbnb';
   const isEditing = !!id;
+  // /anuncios (Condominios) crea SERVICIO desde ahora; /airbnb sigue en PROPIEDAD.
+  const categoriaInicial: CategoriaAnuncio = modo === 'admin' ? 'SERVICIO' : 'PROPIEDAD';
 
   const [loading, setLoading] = useState(isEditing);
   const [saving, setSaving] = useState(false);
+  const [categoria, setCategoria] = useState<CategoriaAnuncio>(categoriaInicial);
 
   const [titulo, setTitulo] = useState('');
   const [subtitulo, setSubtitulo] = useState('');
@@ -135,14 +182,15 @@ export function AnuncioForm() {
   useEffect(() => {
     if (!id) return;
     obtenerAnuncio(id).then((a: Anuncio) => {
+      setCategoria(a.categoria);
       setTitulo(a.titulo);
       setSubtitulo(a.subtitulo || '');
       setDescripcion(a.descripcion || '');
-      setTipoPropiedad(a.tipoPropiedad);
-      setModalidadRenta(a.modalidadRenta);
-      setColonia(a.colonia);
-      setCiudad(a.ciudad);
-      setPrecio(a.precio.toString());
+      setTipoPropiedad(a.tipoPropiedad || 'CASA');
+      setModalidadRenta(a.modalidadRenta || 'SIN_MUEBLES_LP');
+      setColonia(a.colonia || '');
+      setCiudad(a.ciudad || '');
+      setPrecio(a.precio?.toString() || '');
       setPeriodo(a.periodo);
       setMoneda(a.moneda);
       setRecamaras(a.recamaras.toString());
@@ -156,33 +204,43 @@ export function AnuncioForm() {
     });
   }, [id, basePath, navigate]);
 
+  const esServicio = categoria === 'SERVICIO';
+  const puedeGuardar = esServicio ? !!titulo.trim() : !!(titulo.trim() && colonia.trim() && ciudad.trim());
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !titulo.trim() || !colonia.trim() || !ciudad.trim()) return;
+    if (!user || !puedeGuardar) return;
     setSaving(true);
     try {
-      const data: Partial<Anuncio> = {
-        titulo: titulo.trim(),
-        subtitulo: subtitulo.trim() || undefined,
-        descripcion: descripcion.trim() || undefined,
-        tipoPropiedad,
-        modalidadRenta,
-        colonia: colonia.trim(),
-        ciudad: ciudad.trim(),
-        precio: Number(precio) || 0,
-        periodo,
-        moneda,
-        recamaras: Number(recamaras) || 0,
-        banos: Number(banos) || 0,
-        destacado,
-        imagenes,
-      };
+      const data: Partial<Anuncio> = esServicio
+        ? {
+            titulo: titulo.trim(),
+            descripcion: descripcion.trim() || undefined,
+            destacado: false,
+            imagenes,
+          }
+        : {
+            titulo: titulo.trim(),
+            subtitulo: subtitulo.trim() || undefined,
+            descripcion: descripcion.trim() || undefined,
+            tipoPropiedad,
+            modalidadRenta,
+            colonia: colonia.trim(),
+            ciudad: ciudad.trim(),
+            precio: Number(precio) || 0,
+            periodo,
+            moneda,
+            recamaras: Number(recamaras) || 0,
+            banos: Number(banos) || 0,
+            destacado,
+            imagenes,
+          };
 
       if (isEditing && id) {
         await actualizarAnuncio(id, data);
         toast.success('Anuncio actualizado');
       } else {
-        await crearAnuncio({ ...data, agentId: user.id, modo, slug: generateSlug(titulo) });
+        await crearAnuncio({ ...data, agentId: user.id, modo, categoria, slug: generateSlug(titulo) });
         toast.success('Anuncio creado como borrador');
       }
       navigate(`${basePath}/anuncios`);
@@ -209,108 +267,147 @@ export function AnuncioForm() {
         </Button>
         <div>
           <h1 className="text-2xl font-bold">{isEditing ? 'Editar anuncio' : 'Nuevo anuncio'}</h1>
-          <p className="text-muted-foreground text-sm">{modo === 'airbnb' ? 'Anuncio de Airbnb' : 'Anuncio de propiedad'}</p>
+          <p className="text-muted-foreground text-sm">{esServicio ? 'Anuncio de servicio de administración' : modo === 'airbnb' ? 'Anuncio de Airbnb' : 'Anuncio de propiedad'}</p>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <Card>
-          <CardHeader><CardTitle className="text-base">Información general</CardTitle></CardHeader>
-          <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5 sm:col-span-2">
-              <Label>Título *</Label>
-              <Input value={titulo} onChange={(e) => setTitulo(e.target.value)} placeholder="Ej: Departamento amueblado zona centro" required />
-            </div>
-            <div className="space-y-1.5 sm:col-span-2">
-              <Label>Subtítulo</Label>
-              <Input value={subtitulo} onChange={(e) => setSubtitulo(e.target.value)} placeholder="Frase corta destacada (opcional)" />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Tipo de propiedad</Label>
-              <Select value={tipoPropiedad} onValueChange={setTipoPropiedad}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {Object.entries(TIPOS_PROPIEDAD).map(([key, { label }]) => <SelectItem key={key} value={key}>{label}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Modalidad</Label>
-              <Select value={modalidadRenta} onValueChange={setModalidadRenta}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {Object.entries(MODALIDADES).map(([key, { label }]) => <SelectItem key={key} value={key}>{label}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Colonia *</Label>
-              <Input value={colonia} onChange={(e) => setColonia(e.target.value)} required />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Ciudad *</Label>
-              <Input value={ciudad} onChange={(e) => setCiudad(e.target.value)} required />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Recámaras</Label>
-              <Input type="number" min={0} value={recamaras} onChange={(e) => setRecamaras(e.target.value)} />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Baños</Label>
-              <Input type="number" min={0} value={banos} onChange={(e) => setBanos(e.target.value)} />
-            </div>
-            <div className="space-y-1.5 sm:col-span-2">
-              <Label>Descripción</Label>
-              <Textarea value={descripcion} onChange={(e) => setDescripcion(e.target.value)} rows={4} />
-            </div>
-            <div className="flex items-center justify-between sm:col-span-2">
-              <Label htmlFor="destacado">Destacado</Label>
-              <Switch id="destacado" checked={destacado} onCheckedChange={setDestacado} />
-            </div>
-          </CardContent>
-        </Card>
+        {esServicio ? (
+          <>
+            <Card>
+              <CardHeader><CardTitle className="text-base">Información general</CardTitle></CardHeader>
+              <CardContent>
+                <div className="space-y-1.5">
+                  <Label>Título del anuncio *</Label>
+                  <Input value={titulo} onChange={(e) => setTitulo(e.target.value)} placeholder="Ej: Carrusel administración — septiembre" required />
+                </div>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader><CardTitle className="text-base">Precio</CardTitle></CardHeader>
-          <CardContent className="grid grid-cols-3 gap-4">
-            <div className="space-y-1.5">
-              <Label>Moneda</Label>
-              <Select value={moneda} onValueChange={setMoneda}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="MXN">MXN</SelectItem>
-                  <SelectItem value="USD">USD</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Precio *</Label>
-              <Input type="number" min={0} value={precio} onChange={(e) => setPrecio(e.target.value)} required />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Periodo</Label>
-              <Select value={periodo} onValueChange={setPeriodo}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="/mes">/mes</SelectItem>
-                  <SelectItem value="/noche">/noche</SelectItem>
-                  <SelectItem value="total">Precio total</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
+            <Card>
+              <CardHeader><CardTitle className="text-base">Texto de la publicación</CardTitle></CardHeader>
+              <CardContent>
+                <CaptionConEmojis value={descripcion} onChange={setDescripcion} />
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader><CardTitle className="text-base">Imágenes</CardTitle></CardHeader>
-          <CardContent>
-            <ImagenesUploader imagenes={imagenes} onChange={setImagenes} />
-          </CardContent>
-        </Card>
+            <Card>
+              <CardHeader><CardTitle className="text-base">Diapositivas</CardTitle></CardHeader>
+              <CardContent>
+                <DiapositivasEditor
+                  slides={imagenes}
+                  onChange={setImagenes}
+                  contacto={{ nombre: `${user?.name || ''} ${user?.lastName || ''}`.trim(), telefono: user?.phone }}
+                />
+              </CardContent>
+            </Card>
+          </>
+        ) : (
+          <>
+            <Card>
+              <CardHeader><CardTitle className="text-base">Información general</CardTitle></CardHeader>
+              <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label>Título *</Label>
+                  <Input value={titulo} onChange={(e) => setTitulo(e.target.value)} placeholder="Ej: Departamento amueblado zona centro" required />
+                </div>
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label>Subtítulo</Label>
+                  <Input value={subtitulo} onChange={(e) => setSubtitulo(e.target.value)} placeholder="Frase corta destacada (opcional)" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Tipo de propiedad</Label>
+                  <Select value={tipoPropiedad} onValueChange={setTipoPropiedad}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(TIPOS_PROPIEDAD).map(([key, { label }]) => <SelectItem key={key} value={key}>{label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Modalidad</Label>
+                  <Select value={modalidadRenta} onValueChange={setModalidadRenta}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(MODALIDADES).map(([key, { label }]) => <SelectItem key={key} value={key}>{label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Colonia *</Label>
+                  <Input value={colonia} onChange={(e) => setColonia(e.target.value)} required />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Ciudad *</Label>
+                  <Input value={ciudad} onChange={(e) => setCiudad(e.target.value)} required />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Recámaras</Label>
+                  <Input type="number" min={0} value={recamaras} onChange={(e) => setRecamaras(e.target.value)} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Baños</Label>
+                  <Input type="number" min={0} value={banos} onChange={(e) => setBanos(e.target.value)} />
+                </div>
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label>Descripción</Label>
+                  <textarea
+                    value={descripcion}
+                    onChange={(e) => setDescripcion(e.target.value)}
+                    rows={4}
+                    className="border-input placeholder:text-muted-foreground flex field-sizing-content min-h-16 w-full rounded-md border bg-transparent px-3 py-2 text-base shadow-xs outline-none md:text-sm"
+                  />
+                </div>
+                <div className="flex items-center justify-between sm:col-span-2">
+                  <Label htmlFor="destacado">Destacado</Label>
+                  <Switch id="destacado" checked={destacado} onCheckedChange={setDestacado} />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader><CardTitle className="text-base">Precio</CardTitle></CardHeader>
+              <CardContent className="grid grid-cols-3 gap-4">
+                <div className="space-y-1.5">
+                  <Label>Moneda</Label>
+                  <Select value={moneda} onValueChange={setMoneda}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="MXN">MXN</SelectItem>
+                      <SelectItem value="USD">USD</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Precio *</Label>
+                  <Input type="number" min={0} value={precio} onChange={(e) => setPrecio(e.target.value)} required />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Periodo</Label>
+                  <Select value={periodo} onValueChange={setPeriodo}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="/mes">/mes</SelectItem>
+                      <SelectItem value="/noche">/noche</SelectItem>
+                      <SelectItem value="total">Precio total</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader><CardTitle className="text-base">Imágenes</CardTitle></CardHeader>
+              <CardContent>
+                <ImagenesUploader imagenes={imagenes} onChange={setImagenes} />
+              </CardContent>
+            </Card>
+          </>
+        )}
 
         <div className="flex justify-end gap-2">
           <Button type="button" variant="outline" onClick={() => navigate(`${basePath}/anuncios`)}>Cancelar</Button>
-          <Button type="submit" disabled={saving || !titulo.trim() || !colonia.trim() || !ciudad.trim()}>
+          <Button type="submit" disabled={saving || !puedeGuardar}>
             {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
             {isEditing ? 'Guardar cambios' : 'Crear anuncio'}
           </Button>
