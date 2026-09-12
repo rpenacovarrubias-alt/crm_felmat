@@ -206,6 +206,48 @@ que hoy -- ningún cambio visible para Airbnb.
   `user.phone`) -- si el asesor no tiene teléfono cargado en su perfil, esa
   línea se omite en la plantilla en vez de mostrar un valor inventado.
 
+## Extensión: Propiedades también, con dos canales
+
+El usuario pidió, después de aprobar todo lo anterior, que Propiedades
+tenga acceso a los dos tipos de anuncio bajo dos entradas de sidebar
+separadas dentro de su propio grupo:
+
+- **"Ficha"** (`/propiedades/ficha`) -- anuncio `categoria: 'PROPIEDAD'`
+  tal cual ya funciona hoy para Airbnb (colonia/precio/recámaras/baños):
+  una publicación ligada a una unidad específica.
+- **"Anuncios"** (`/propiedades/anuncios`) -- anuncio `categoria: 'SERVICIO'`,
+  el mismo editor multi-diapositiva que esta pieza construye para
+  Condominios (texto libre + emojis + de 1 a 10 diapositivas compuestas
+  con marca): publicaciones que no están ligadas a una unidad concreta
+  (ej. "3 propiedades nuevas este mes", campañas de marca, etc.).
+
+Esto agrega un tercer valor a `ModoAnuncio` (`'admin' | 'airbnb' |
+'propiedades'`) y, por primera vez, una sección (Propiedades) que necesita
+AMBAS categorías bajo el mismo `modo` -- Condominios y Airbnb solo
+necesitan una categoría fija cada una, así que hasta ahora `modo` y
+`categoria` estaban 1:1. Para Propiedades ya no lo están: se distinguen
+por la ruta (`/propiedades/ficha` vs `/propiedades/anuncios`), no por el
+`modo`.
+
+Esto exige tres cosas que la primera versión de este documento no cubría:
+
+1. Un helper único, `resolverContextoAnuncio(pathname)`, que decide
+   `{ modo, categoria, rutaBase }` a partir de la URL -- reemplaza las
+   3 copias sueltas de `pathname.startsWith('/airbnb') ? ... : ...` que
+   existían en `Anuncios.tsx`, `AnuncioForm.tsx` y `AnuncioDetail.tsx`
+   antes de esta extensión (y evita crear una cuarta copia para
+   Propiedades).
+2. `GET /api/anuncios` acepta un filtro `categoria` (hoy solo filtra por
+   `modo`) -- si no, la lista de "Ficha" de Propiedades mostraría también
+   los anuncios de "Anuncios" de Propiedades y viceversa.
+3. El sidebar de Propiedades gana dos entradas nuevas ("Ficha" y
+   "Anuncios"), y `App.tsx` gana 8 rutas nuevas (list/nuevo/:id/:id-editar
+   × 2 canales).
+
+El badge "Servicio de administración" que Task 8 le puso a las tarjetas de
+`categoria === 'SERVICIO'` se generaliza a "Anuncio" -- ese texto ya no es
+correcto fuera de Condominios.
+
 ## Pantallas de lista y detalle
 
 `ListaAnuncios.tsx` (`GridView` y `ListView`) y `AnuncioDetail.tsx`
