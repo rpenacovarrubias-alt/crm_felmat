@@ -8,43 +8,44 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  name          String?
-  role          String    @default("USER")
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  role      String   @default("USER")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Anuncio {
-  id              String   @id @default(cuid())
-  agentId         String
-  modo            String   @default("admin")
-  titulo          String
-  subtitulo       String?
-  slug            String   @unique
-  descripcion     String?
-  colonia         String
-  ciudad          String
-  estado          String   @default("BORRADOR")
-  precio          Float
-  moneda          String   @default("MXN")
-  periodo         String   @default("/mes")
-  tipoPropiedad   String
-  modalidadRenta  String
-  recamaras       Int      @default(0)
-  banos           Int      @default(0)
-  destacado       Boolean  @default(false)
+  id               String             @id @default(cuid())
+  agentId          String
+  modo             String             @default("admin")
+  categoria        String             @default("PROPIEDAD")
+  titulo           String
+  subtitulo        String?
+  slug             String             @unique
+  descripcion      String?
+  colonia          String?
+  ciudad           String?
+  estado           String             @default("BORRADOR")
+  precio           Float?
+  moneda           String             @default("MXN")
+  periodo          String             @default("/mes")
+  tipoPropiedad    String?
+  modalidadRenta   String?
+  recamaras        Int                @default(0)
+  banos            Int                @default(0)
+  destacado        Boolean            @default(false)
   fechaPublicacion DateTime?
   fechaExpiracion  DateTime?
-  metaTitle       String?
-  metaDescription String?
-  vistas          Int      @default(0)
-  contactos       Int      @default(0)
-  imagenes        ImagenAnuncio[]
-  publicaciones   PublicacionCanal[]
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  metaTitle        String?
+  metaDescription  String?
+  vistas           Int                @default(0)
+  contactos        Int                @default(0)
+  imagenes         ImagenAnuncio[]
+  publicaciones    PublicacionCanal[]
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
 
   @@index([estado])
   @@index([tipoPropiedad])
@@ -55,48 +56,51 @@ model Anuncio {
 }
 
 model ImagenAnuncio {
-  id          String   @id @default(cuid())
-  url         String
-  esPrincipal Boolean  @default(false)
-  orden       Int      @default(0)
-  anuncioId   String
-  anuncio     Anuncio  @relation(fields: [anuncioId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now())
+  id                 String   @id @default(cuid())
+  url                String
+  esPrincipal        Boolean  @default(false)
+  orden              Int      @default(0)
+  headline           String?
+  subtitulo          String?
+  imagenCompuestaUrl String?
+  anuncioId          String
+  anuncio            Anuncio  @relation(fields: [anuncioId], references: [id], onDelete: Cascade)
+  createdAt          DateTime @default(now())
 }
 
 model PublicacionCanal {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   anuncioId   String
-  anuncio     Anuncio  @relation(fields: [anuncioId], references: [id], onDelete: Cascade)
+  anuncio     Anuncio   @relation(fields: [anuncioId], references: [id], onDelete: Cascade)
   canal       String
-  estado      String   @default("PENDIENTE")
+  estado      String    @default("PENDIENTE")
   externalId  String?
   externalUrl String?
   errorMsg    String?
   publicadoAt DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
   @@unique([anuncioId, canal])
 }
 
 model FelmatUser {
-  id             String    @id @default(cuid())
-  email          String    @unique
+  id             String                @id @default(cuid())
+  email          String                @unique
   passwordHash   String?
   salt           String?
   name           String
   lastName       String
   phone          String?
   avatar         String?
-  role           String    // 'super_admin' | 'admin' | 'agent' | 'assistant'
+  role           String // 'super_admin' | 'admin' | 'agent' | 'assistant'
   agencyId       String?
-  isActive       Boolean   @default(true)
-  propertyAccess Json      @default("[]") // string[] de FelmatProperty.id; [] = todas (solo aplica a agent/assistant)
-  config         Json?     // AgentConfig completo (branding, shareSettings, digitalCard...)
+  isActive       Boolean               @default(true)
+  propertyAccess Json                  @default("[]") // string[] de FelmatProperty.id; [] = todas (solo aplica a agent/assistant)
+  config         Json? // AgentConfig completo (branding, shareSettings, digitalCard...)
   lastLogin      DateTime?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
   properties     FelmatProperty[]
   shares         FelmatPropertyShare[]
   socialConfigs  FelmatSocialConfig[]
@@ -105,35 +109,35 @@ model FelmatUser {
 }
 
 model FelmatProperty {
-  id              String    @id @default(cuid())
+  id              String                @id @default(cuid())
   title           String
   description     String
   propertyType    String
   transactionType String
   price           Float
-  priceCurrency   String    @default("MXN")
+  priceCurrency   String                @default("MXN")
   maintenanceFee  Float?
   status          String
-  location        Json      // Location
-  features        Json      // PropertyFeatures
-  images          Json      @default("[]") // PropertyImage[]
+  location        Json // Location
+  features        Json // PropertyFeatures
+  images          Json                  @default("[]") // PropertyImage[]
   agentId         String
-  agent           FelmatUser @relation(fields: [agentId], references: [id])
+  agent           FelmatUser            @relation(fields: [agentId], references: [id])
   agencyId        String?
-  slug            String    @unique
+  slug            String                @unique
   metaTitle       String?
   metaDescription String?
-  tags            Json      @default("[]")
-  views           Int       @default(0)
-  leadsCount      Int       @default(0)
-  favoritesCount  Int       @default(0)
+  tags            Json                  @default("[]")
+  views           Int                   @default(0)
+  leadsCount      Int                   @default(0)
+  favoritesCount  Int                   @default(0)
   publishedAt     DateTime?
-  isPublished     Boolean   @default(false)
-  isFeatured      Boolean   @default(false)
+  isPublished     Boolean               @default(false)
+  isFeatured      Boolean               @default(false)
   commission      Float?
   commissionType  String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
   shares          FelmatPropertyShare[]
 
   @@index([agentId])
@@ -142,12 +146,12 @@ model FelmatProperty {
 }
 
 model FelmatPropertyShare {
-  id                  String   @id @default(cuid())
-  slug                String   @unique
+  id                  String         @id @default(cuid())
+  slug                String         @unique
   propertyId          String
   property            FelmatProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
   createdBy           String
-  creator             FelmatUser @relation(fields: [createdBy], references: [id])
+  creator             FelmatUser     @relation(fields: [createdBy], references: [id])
   overrideName        String?
   overridePhone       String?
   overrideWhatsapp    String?
@@ -155,26 +159,26 @@ model FelmatPropertyShare {
   overrideAvatar      String?
   overrideCertificate String?
   overrideBio         String?
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
 
   @@map("felmat_property_shares")
 }
 
 model FelmatSocialConfig {
-  id          String   @id @default(cuid())
+  id          String     @id @default(cuid())
   userId      String
   user        FelmatUser @relation(fields: [userId], references: [id], onDelete: Cascade)
-  section     String   // 'propiedades' | 'condominios' | 'airbnb'
-  platform    String   // 'facebook' | 'instagram'
-  enabled     Boolean  @default(false)
+  section     String // 'propiedades' | 'condominios' | 'airbnb'
+  platform    String // 'facebook' | 'instagram'
+  enabled     Boolean    @default(false)
   appId       String?
   appSecret   String?
-  accountId   String?  // Page ID (facebook) o Instagram Business Account ID (instagram)
+  accountId   String? // Page ID (facebook) o Instagram Business Account ID (instagram)
   accessToken String?
   updatedBy   String
-  updatedAt   DateTime @updatedAt
-  createdAt   DateTime @default(now())
+  updatedAt   DateTime   @updatedAt
+  createdAt   DateTime   @default(now())
 
   @@unique([userId, section, platform])
   @@map("felmat_social_config")
