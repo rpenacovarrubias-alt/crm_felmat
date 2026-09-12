@@ -105,6 +105,7 @@ export function AnuncioDetail() {
   }
 
   const principal = anuncio.imagenes.find(i => i.esPrincipal) || anuncio.imagenes[0];
+  const principalUrl = principal ? (principal.imagenCompuestaUrl || principal.url) : undefined;
 
   return (
     <div className="p-6 space-y-6 max-w-4xl mx-auto">
@@ -115,9 +116,11 @@ export function AnuncioDetail() {
           </Button>
           <div>
             <h1 className="text-2xl font-bold">{anuncio.titulo}</h1>
-            <p className="text-muted-foreground text-sm flex items-center gap-1">
-              <MapPin className="w-3.5 h-3.5" />{anuncio.colonia}, {anuncio.ciudad}
-            </p>
+            {anuncio.categoria !== 'SERVICIO' && (
+              <p className="text-muted-foreground text-sm flex items-center gap-1">
+                <MapPin className="w-3.5 h-3.5" />{anuncio.colonia}, {anuncio.ciudad}
+              </p>
+            )}
           </div>
         </div>
         <div className="flex gap-2">
@@ -138,7 +141,7 @@ export function AnuncioDetail() {
           <Card className="overflow-hidden">
             <div className="aspect-video bg-muted">
               {principal ? (
-                <img src={principal.url} alt={anuncio.titulo} className="w-full h-full object-cover" />
+                <img src={principalUrl} alt={anuncio.titulo} className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                   <ImageIcon className="w-12 h-12" />
@@ -166,13 +169,19 @@ export function AnuncioDetail() {
           <Card>
             <CardContent className="p-4 space-y-3">
               <Badge>{ESTADO_LABELS[anuncio.estado]}</Badge>
-              <p className="text-2xl font-bold text-primary">
-                ${anuncio.precio.toLocaleString('es-MX')} {anuncio.moneda} {anuncio.periodo}
-              </p>
-              <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                <span className="flex items-center gap-1"><BedDouble className="w-4 h-4" />{anuncio.recamaras}</span>
-                <span className="flex items-center gap-1"><Bath className="w-4 h-4" />{anuncio.banos}</span>
-              </div>
+              {anuncio.categoria === 'SERVICIO' ? (
+                <p className="text-sm text-muted-foreground">Anuncio de servicio -- sin precio ni unidad asociada.</p>
+              ) : (
+                <>
+                  <p className="text-2xl font-bold text-primary">
+                    ${(anuncio.precio || 0).toLocaleString('es-MX')} {anuncio.moneda} {anuncio.periodo}
+                  </p>
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <span className="flex items-center gap-1"><BedDouble className="w-4 h-4" />{anuncio.recamaras}</span>
+                    <span className="flex items-center gap-1"><Bath className="w-4 h-4" />{anuncio.banos}</span>
+                  </div>
+                </>
+              )}
               <div className="flex items-center gap-4 text-sm text-muted-foreground pt-2 border-t">
                 <span className="flex items-center gap-1"><Eye className="w-3.5 h-3.5" />{anuncio.vistas} vistas</span>
                 <span>{anuncio.contactos} contactos</span>

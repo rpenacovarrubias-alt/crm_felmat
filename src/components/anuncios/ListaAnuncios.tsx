@@ -182,7 +182,7 @@ export default function ListaAnuncios({ modo = 'admin' }: { modo?: 'admin' | 'ai
           <Card key={anuncio.id} className="group overflow-hidden hover:shadow-xl transition-all duration-300 border border-gray-200 bg-white">
             <div className="relative aspect-[4/3] bg-gray-100 overflow-hidden">
               {anuncio.imagenes?.length > 0 ? (
-                <img src={anuncio.imagenes[0].url} alt={anuncio.titulo} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                <img src={anuncio.imagenes[0].imagenCompuestaUrl || anuncio.imagenes[0].url} alt={anuncio.titulo} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-gray-400 bg-gray-50"><ImageIcon className="w-12 h-12" /></div>
               )}
@@ -190,9 +190,11 @@ export default function ListaAnuncios({ modo = 'admin' }: { modo?: 'admin' | 'ai
                 <Badge className={cn("border shadow-sm", estadoConfig.color)}><EstadoIcon className="w-3 h-3 mr-1" />{estadoConfig.label}</Badge>
                 {anuncio.destacado && <Badge className="bg-amber-500 text-white border-amber-500 shadow-sm">⭐ Destacado</Badge>}
               </div>
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
-                <p className="text-white font-bold text-lg">{formatPrice(anuncio.precio, anuncio.moneda, anuncio.periodo)}</p>
-              </div>
+              {anuncio.categoria !== 'SERVICIO' && (
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+                  <p className="text-white font-bold text-lg">{formatPrice(anuncio.precio || 0, anuncio.moneda, anuncio.periodo)}</p>
+                </div>
+              )}
               <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-all duration-200">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -211,16 +213,24 @@ export default function ListaAnuncios({ modo = 'admin' }: { modo?: 'admin' | 'ai
               </div>
             </div>
             <CardContent className="p-4">
-              <div className="flex gap-2 mb-3 flex-wrap">
-                <Badge variant="outline" className={cn("text-xs", getTipoConfig(anuncio.tipoPropiedad).color)}>{getTipoConfig(anuncio.tipoPropiedad).label}</Badge>
-                <Badge variant="outline" className={cn("text-xs", getModalidadConfig(anuncio.modalidadRenta).color)}>{getModalidadConfig(anuncio.modalidadRenta).label}</Badge>
-              </div>
+              {anuncio.categoria === 'SERVICIO' ? (
+                <Badge variant="outline" className="text-xs bg-gray-100 text-gray-800 mb-3">Anuncio</Badge>
+              ) : (
+                <div className="flex gap-2 mb-3 flex-wrap">
+                  <Badge variant="outline" className={cn("text-xs", getTipoConfig(anuncio.tipoPropiedad || '').color)}>{getTipoConfig(anuncio.tipoPropiedad || '').label}</Badge>
+                  <Badge variant="outline" className={cn("text-xs", getModalidadConfig(anuncio.modalidadRenta || '').color)}>{getModalidadConfig(anuncio.modalidadRenta || '').label}</Badge>
+                </div>
+              )}
               <h3 className="font-semibold text-gray-900 mb-1 line-clamp-2 text-sm leading-tight">{anuncio.titulo}</h3>
-              <p className="text-sm text-gray-500 mb-3 flex items-center gap-1"><MapPin className="w-3 h-3 flex-shrink-0" /><span className="truncate">{anuncio.colonia}, {anuncio.ciudad}</span></p>
-              <div className="flex gap-4 text-sm text-gray-600 mb-3">
-                <span className="flex items-center gap-1"><BedDouble className="w-4 h-4 text-gray-400" />{anuncio.tipoPropiedad === 'ESTUDIO' ? 'Estudio' : `${anuncio.recamaras || 0} rec.`}</span>
-                <span className="flex items-center gap-1"><Bath className="w-4 h-4 text-gray-400" />{anuncio.banos || 0} baños</span>
-              </div>
+              {anuncio.categoria !== 'SERVICIO' && (
+                <>
+                  <p className="text-sm text-gray-500 mb-3 flex items-center gap-1"><MapPin className="w-3 h-3 flex-shrink-0" /><span className="truncate">{anuncio.colonia}, {anuncio.ciudad}</span></p>
+                  <div className="flex gap-4 text-sm text-gray-600 mb-3">
+                    <span className="flex items-center gap-1"><BedDouble className="w-4 h-4 text-gray-400" />{anuncio.tipoPropiedad === 'ESTUDIO' ? 'Estudio' : `${anuncio.recamaras || 0} rec.`}</span>
+                    <span className="flex items-center gap-1"><Bath className="w-4 h-4 text-gray-400" />{anuncio.banos || 0} baños</span>
+                  </div>
+                </>
+              )}
               <div className="flex gap-2 mb-3">
                 {Object.keys(CANALES).map((canal) => {
                   const pub = getEstadoPublicacion(anuncio, canal);
@@ -268,19 +278,25 @@ export default function ListaAnuncios({ modo = 'admin' }: { modo?: 'admin' | 'ai
               <TableRow key={anuncio.id} className="group hover:bg-gray-50/80 transition-colors">
                 <TableCell>
                   <div className="w-16 h-12 bg-gray-100 rounded-lg overflow-hidden border border-gray-200">
-                    {anuncio.imagenes?.length > 0 ? <img src={anuncio.imagenes[0].url} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-gray-400"><ImageIcon className="w-6 h-6" /></div>}
+                    {anuncio.imagenes?.length > 0 ? <img src={anuncio.imagenes[0].imagenCompuestaUrl || anuncio.imagenes[0].url} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-gray-400"><ImageIcon className="w-6 h-6" /></div>}
                   </div>
                 </TableCell>
                 <TableCell>
                   <div className="max-w-[300px]">
                     <p className="font-medium text-gray-900 line-clamp-1 text-sm">{anuncio.titulo}</p>
                     <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                      <span className={cn("px-2 py-0.5 rounded-md text-xs font-medium border", getTipoConfig(anuncio.tipoPropiedad).color)}>{getTipoConfig(anuncio.tipoPropiedad).label}</span>
-                      <span className="flex items-center gap-1 text-xs text-gray-500"><MapPin className="w-3 h-3" />{anuncio.colonia}</span>
+                      {anuncio.categoria === 'SERVICIO' ? (
+                        <span className="px-2 py-0.5 rounded-md text-xs font-medium border bg-gray-100 text-gray-800">Anuncio</span>
+                      ) : (
+                        <>
+                          <span className={cn("px-2 py-0.5 rounded-md text-xs font-medium border", getTipoConfig(anuncio.tipoPropiedad || '').color)}>{getTipoConfig(anuncio.tipoPropiedad || '').label}</span>
+                          <span className="flex items-center gap-1 text-xs text-gray-500"><MapPin className="w-3 h-3" />{anuncio.colonia}</span>
+                        </>
+                      )}
                     </div>
                   </div>
                 </TableCell>
-                <TableCell><p className="font-semibold text-gray-900 text-sm">{formatPrice(anuncio.precio, anuncio.moneda, anuncio.periodo)}</p></TableCell>
+                <TableCell><p className="font-semibold text-gray-900 text-sm">{anuncio.categoria === 'SERVICIO' ? '—' : formatPrice(anuncio.precio || 0, anuncio.moneda, anuncio.periodo)}</p></TableCell>
                 <TableCell><Badge className={cn("border", estadoConfig.color)}><EstadoIcon className="w-3 h-3 mr-1" />{estadoConfig.label}</Badge></TableCell>
                 <TableCell>
                   <div className="flex gap-1.5">
