@@ -37,7 +37,7 @@ piezas en vez de intentarlo todo junto.
 
 ## Decisiones confirmadas con el usuario
 
-1. **Un solo modelo `Anuncio`, con un campo `tipo`** ('PROPIEDAD' |
+1. **Un solo modelo `Anuncio`, con un campo `categoria`** ('PROPIEDAD' |
    'SERVICIO'), en vez de una tabla separada -- reutiliza `ListaAnuncios`,
    `AnuncioDetail`, el flujo de "Publicar en...", `ImagenAnuncio` y
    `PublicacionCanal` tal cual, con una rama condicional en el formulario.
@@ -60,12 +60,31 @@ piezas en vez de intentarlo todo junto.
    sirve para cualquier asesor de Condominios, no solo para quien lo probó
    primero.
 
+## Correcciones a la redacción original de este documento
+
+Al mapear qué archivos toca esta pieza (paso obligatorio antes de escribir el
+plan) aparecieron dos problemas reales que esta versión ya corrige:
+
+1. **Colisión de nombres:** `api/anuncios.js` ya usa `req.query.tipo` como
+   filtro de `tipoPropiedad` (CASA/DEPARTAMENTO/...). Llamar `tipo` al nuevo
+   discriminador PROPIEDAD/SERVICIO en el mismo modelo sería confuso y
+   propenso a error (dos significados de "tipo" en el mismo archivo). El
+   campo nuevo se llama **`categoria`**, no `tipo`.
+2. **`ListaAnuncios.tsx` y `AnuncioDetail.tsx` truenan con datos nulos:**
+   ambos renderizan hoy `anuncio.precio.toLocaleString(...)`,
+   `anuncio.colonia`, `anuncio.recamaras`, `getTipoConfig(anuncio.tipoPropiedad)`
+   sin ninguna verificación. En cuanto `precio`/`colonia`/`tipoPropiedad`
+   pasen a ser opcionales, un anuncio SERVICIO real haría crashear estas dos
+   pantallas (`.toLocaleString` sobre `null` truena). Como esta pieza es la
+   que vuelve esos campos opcionales, corregir ambos archivos es parte
+   necesaria de esta pieza, no un extra.
+
 ## Modelo de datos
 
 ```prisma
 model Anuncio {
   // ...campos existentes sin cambio...
-  tipo            String   @default("PROPIEDAD") // 'PROPIEDAD' | 'SERVICIO'
+  categoria       String   @default("PROPIEDAD") // 'PROPIEDAD' | 'SERVICIO'
   colonia         String?  // antes String (obligatorio)
   ciudad          String?  // antes String (obligatorio)
   precio          Float?   // antes Float (obligatorio)
@@ -93,18 +112,18 @@ Migración seleccionada: `npx prisma migrate dev` (o `db push` en dev, según
 el flujo que ya usa el proyecto) agregando las columnas nuevas y relajando
 los `NOT NULL` de las cinco columnas listadas. No hay pérdida de datos: las
 filas existentes ya traen valores reales en esas columnas y se les asigna
-`tipo = 'PROPIEDAD'` por el default.
+`categoria = 'PROPIEDAD'` por el default.
 
 ## Formulario (`AnuncioForm.tsx`)
 
-Se determina `tipo` al crear: la ruta `/anuncios/nuevo` (contexto
-Condominios, `modo === 'admin'`) crea siempre `tipo: 'SERVICIO'` a partir de
-ahora. `/airbnb/anuncios/nuevo` sigue creando `tipo: 'PROPIEDAD'`, sin
-cambios. Al editar, `tipo` viene del anuncio cargado y no se puede cambiar
+Se determina `categoria` al crear: la ruta `/anuncios/nuevo` (contexto
+Condominios, `modo === 'admin'`) crea siempre `categoria: 'SERVICIO'` a partir de
+ahora. `/airbnb/anuncios/nuevo` sigue creando `categoria: 'PROPIEDAD'`, sin
+cambios. Al editar, `categoria` viene del anuncio cargado y no se puede cambiar
 después de creado (evita dejar a medio migrar un anuncio con campos de
 ambos mundos).
 
-Cuando `tipo === 'SERVICIO'`, el formulario reemplaza las tarjetas de
+Cuando `categoria === 'SERVICIO'`, el formulario reemplaza las tarjetas de
 propiedad por:
 
 - **Información general** -- un solo campo, "Título del anuncio" (nombre
@@ -124,7 +143,7 @@ propiedad por:
   - Botones subir/bajar (reordenar) y eliminar.
   - "+ Agregar diapositiva", deshabilitado al llegar a 10.
 
-Cuando `tipo === 'PROPIEDAD'` el formulario se comporta exactamente igual
+Cuando `categoria === 'PROPIEDAD'` el formulario se comporta exactamente igual
 que hoy -- ningún cambio visible para Airbnb.
 
 ## Compositor
@@ -136,11 +155,25 @@ que hoy -- ningún cambio visible para Airbnb.
   diagonal oscuro, logo Felmat, encabezado/subtítulo, pie de contacto.
 - `src/lib/generarImagenAnuncio.ts` -- usa `html-to-image` (nueva
   dependencia) para renderizar una instancia montada fuera de pantalla de
-  `PlantillaCondominios` a un `Blob` PNG.
+  `PlantillaCondominios`. Se exporta con `toJpeg(..., { quality: 0.85 })`,
+  no `toPng` -- un PNG de una foto real pesa varias veces más que un JPEG
+  comparable, y ya nos mordió una vez el límite de ~4.5MB por request de las
+  funciones de Vercel (bug real de fotos de propiedad, corregido antes con
+  compresión en canvas). Usar JPEG aquí evita reabrir ese mismo problema.
 - `api/felmat-upload-anuncio-image.js` -- nuevo endpoint, requiere sesión
-  válida (`getSession`, mismo patrón que el resto de `api/*.js`), recibe el
-  PNG, lo sube a Vercel Blob (`@vercel/blob`, nueva dependencia), regresa la
-  URL pública.
+  válida (`getSession`, mismo patrón que el resto de `api/*.js`), recibe un
+  `{ dataUrl: string }` (igual que ya se hace con `ImagenAnuncio.url` hoy,
+  sin librería de multipart nueva), decodifica el base64 y lo sube a Vercel
+  Blob (`@vercel/blob`, nueva dependencia) con `access: 'public'`, regresa
+  la URL pública. Se usa dos veces por diapositiva: una vez para la foto
+  cruda recién subida (se guarda en `ImagenAnuncio.url`) y otra vez para el
+  resultado compuesto (se guarda en `imagenCompuestaUrl`) -- mismo endpoint,
+  dos llamadas, sin duplicar código.
+- **Prerrequisito de infraestructura:** este endpoint necesita que el
+  proyecto de Vercel tenga un Blob store creado y la variable de entorno
+  `BLOB_READ_WRITE_TOKEN` configurada. Es un paso manual de una sola vez en
+  el dashboard de Vercel -- se confirma al inicio del plan, antes de escribir
+  código que dependa de él.
 - Disparo de regeneración por diapositiva: al soltar/seleccionar una foto
   nueva, o al perder el foco (`onBlur`) de los campos de encabezado o
   subtítulo -- nunca en cada tecla, para no saturar la subida a Blob.
@@ -150,6 +183,26 @@ que hoy -- ningún cambio visible para Airbnb.
 - El pie de contacto se arma con `useAuth()` (`user.name`, `user.lastName`,
   `user.phone`) -- si el asesor no tiene teléfono cargado en su perfil, esa
   línea se omite en la plantilla en vez de mostrar un valor inventado.
+
+## Pantallas de lista y detalle
+
+`ListaAnuncios.tsx` (`GridView` y `ListView`) y `AnuncioDetail.tsx`
+renderizan hoy, sin condición, `anuncio.precio.toLocaleString(...)`,
+`anuncio.colonia`/`anuncio.ciudad`, `anuncio.recamaras`/`anuncio.banos` y
+`getTipoConfig(anuncio.tipoPropiedad)`. En cuanto esos campos puedan ser
+`null` (cualquier anuncio SERVICIO), estas pantallas truenan. Ambos archivos
+necesitan una rama `anuncio.categoria === 'SERVICIO'`:
+
+- Se omiten precio, colonia/ciudad, recámaras/baños y el badge de tipo de
+  propiedad.
+- El badge de estado, los íconos de canal (`CANALES`) y las estadísticas de
+  vistas/contactos se quedan igual -- no dependen de ningún campo de
+  propiedad.
+- La miniatura/imagen principal usa `imagenes[0].imagenCompuestaUrl ||
+  imagenes[0].url` en vez de solo `.url` -- para un anuncio SERVICIO ya
+  compuesto, eso muestra la versión con marca; para uno PROPIEDAD (sin
+  `imagenCompuestaUrl`) cae de vuelta al comportamiento actual sin cambiar
+  nada.
 
 ## Fuera de alcance
 
@@ -162,7 +215,7 @@ que hoy -- ningún cambio visible para Airbnb.
 - **Pieza 4** -- decidir y construir los cambios de Airbnb (¿texto libre
   igual que Condominios, o solo agregar IA + Publicar real a su formulario
   actual de unidad?). No se toca `AnuncioForm.tsx` en su rama `airbnb` en
-  esta pieza, salvo por la adición no disruptiva del campo `tipo` (con
+  esta pieza, salvo por la adición no disruptiva del campo `categoria` (con
   default que preserva su comportamiento actual).
 - Plantilla `PlantillaFicha.tsx` (Propiedad/Airbnb con foto+precio+badge) --
   sigue siendo solo diseño, no código, hasta que se retome esa parte del
@@ -174,13 +227,13 @@ que hoy -- ningún cambio visible para Airbnb.
 
 1. `npx tsc --noEmit` y `npm run build` limpios.
 2. Migración de esquema aplicada sin pérdida de datos: los anuncios de
-   Airbnb existentes (`tipo` default 'PROPIEDAD') se siguen viendo y
+   Airbnb existentes (`categoria` default 'PROPIEDAD') se siguen viendo y
    editando exactamente igual que antes de este cambio.
 3. Crear un anuncio de Condominios real desde `/anuncios/nuevo`: confirmar
    que el formulario no pide colonia/precio/recámaras, que se pueden
    agregar hasta 10 diapositivas con encabezado/subtítulo propios, que cada
-   una genera un PNG de 1080×1080 en Vercel Blob (`imagenCompuestaUrl`
-   responde 200, `image/png`), y que el pie de contacto muestra los datos
+   una genera un JPEG de 1080×1080 en Vercel Blob (`imagenCompuestaUrl`
+   responde 200, `image/jpeg`), y que el pie de contacto muestra los datos
    reales del asesor en sesión (probar con una sesión vía `signSession()`,
    nunca password real).
 4. Confirmar que `ListaAnuncios.tsx` y `AnuncioDetail.tsx` muestran el
