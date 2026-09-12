@@ -50,11 +50,12 @@ export default async function handler(req, res) {
       delete data.slug;
       delete data.categoria; // inmutable después de crear -- ver spec
 
-      const errorValidacion = await (async () => {
-        const actual = await prisma.anuncio.findUnique({ where: { id }, select: { categoria: true } });
-        if (!actual) return null; // el 404 lo maneja Prisma más abajo
-        return validarCamposPropiedad({ ...data, categoria: actual.categoria });
-      })();
+      const actual = await prisma.anuncio.findUnique({ where: { id }, select: { categoria: true } });
+      if (!actual) {
+        return res.status(404).json({ error: 'Anuncio no encontrado' });
+      }
+
+      const errorValidacion = validarCamposPropiedad({ ...data, categoria: actual.categoria });
       if (errorValidacion) {
         return res.status(400).json({ error: errorValidacion });
       }
