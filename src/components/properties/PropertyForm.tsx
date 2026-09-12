@@ -7,6 +7,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useProperties, useUsers, notify } from '@/hooks/useDatabase';
 import type { Property, PropertyType, PropertyStatus, TransactionType, PropertyImage } from '@/types';
+import { compressImageToDataUrl } from '@/lib/imageCompression';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -77,30 +78,6 @@ const amenitiesList = [
   'Lavadora', 'Secadora', 'Amueblado', 'Patio',
   'Balcón', 'Roof garden', 'Sala de TV', 'Estudio',
 ];
-
-// Redimensiona a un maximo de 1600px por lado y reexporta como JPEG calidad
-// 0.82 -- una foto de celular de varios MB queda en unos cientos de KB.
-const MAX_IMAGE_DIMENSION = 1600;
-const IMAGE_QUALITY = 0.82;
-
-function compressImageToDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => {
-      const scale = Math.min(1, MAX_IMAGE_DIMENSION / Math.max(img.width, img.height));
-      const canvas = document.createElement('canvas');
-      canvas.width = Math.round(img.width * scale);
-      canvas.height = Math.round(img.height * scale);
-      const ctx = canvas.getContext('2d');
-      if (!ctx) { reject(new Error('canvas_unsupported')); return; }
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      resolve(canvas.toDataURL('image/jpeg', IMAGE_QUALITY));
-      URL.revokeObjectURL(img.src);
-    };
-    img.onerror = () => reject(new Error('image_load_failed'));
-    img.src = URL.createObjectURL(file);
-  });
-}
 
 // Componente para subir imágenes
 function ImageUploader({
