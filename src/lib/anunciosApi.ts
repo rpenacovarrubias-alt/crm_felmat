@@ -7,11 +7,15 @@
 
 export type EstadoAnuncio = 'BORRADOR' | 'REVISION' | 'PUBLICADO' | 'PAUSADO' | 'EXPIRADO' | 'ARCHIVADO';
 export type ModoAnuncio = 'admin' | 'airbnb';
+export type CategoriaAnuncio = 'PROPIEDAD' | 'SERVICIO';
 
 export interface ImagenAnuncio {
   url: string;
   esPrincipal: boolean;
   orden?: number;
+  headline?: string;
+  subtitulo?: string;
+  imagenCompuestaUrl?: string;
 }
 
 export interface PublicacionAnuncio {
@@ -25,15 +29,16 @@ export interface Anuncio {
   id: string;
   agentId: string;
   modo: ModoAnuncio;
+  categoria: CategoriaAnuncio;
   titulo: string;
   subtitulo?: string;
   slug: string;
   descripcion?: string;
-  tipoPropiedad: string;
-  modalidadRenta: string;
-  colonia: string;
-  ciudad: string;
-  precio: number;
+  tipoPropiedad?: string;
+  modalidadRenta?: string;
+  colonia?: string;
+  ciudad?: string;
+  precio?: number;
   periodo: string;
   moneda: string;
   estado: EstadoAnuncio;
@@ -105,4 +110,8 @@ export function duplicarAnuncio(id: string): Promise<Anuncio> {
 
 export function publicarAnuncio(anuncioId: string, canales: string[]): Promise<{ success: boolean; resultados: unknown[]; mensaje: string }> {
   return apiFetch('/api/publicar', { method: 'POST', body: JSON.stringify({ anuncioId, canales }) });
+}
+
+export function subirImagenAnuncio(dataUrl: string): Promise<{ url: string }> {
+  return apiFetch('/api/felmat-upload-anuncio-image', { method: 'POST', body: JSON.stringify({ dataUrl }) });
 }
