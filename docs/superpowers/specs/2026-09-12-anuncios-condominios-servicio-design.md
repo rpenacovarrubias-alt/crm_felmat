@@ -153,13 +153,22 @@ que hoy -- ningún cambio visible para Airbnb.
   fotoUrl: string, contacto: { nombre: string, telefono: string } }`. Layout
   idéntico al aprobado en el carrusel: foto a pantalla completa, degradado
   diagonal oscuro, logo Felmat, encabezado/subtítulo, pie de contacto.
-- `src/lib/generarImagenAnuncio.ts` -- usa `html-to-image` (nueva
-  dependencia) para renderizar una instancia montada fuera de pantalla de
-  `PlantillaCondominios`. Se exporta con `toJpeg(..., { quality: 0.85 })`,
-  no `toPng` -- un PNG de una foto real pesa varias veces más que un JPEG
-  comparable, y ya nos mordió una vez el límite de ~4.5MB por request de las
-  funciones de Vercel (bug real de fotos de propiedad, corregido antes con
-  compresión en canvas). Usar JPEG aquí evita reabrir ese mismo problema.
+- `src/lib/generarImagenAnuncio.ts` -- renderiza a imagen una instancia
+  montada fuera de pantalla de `PlantillaCondominios`. **No se agrega
+  `html-to-image` como dependencia nueva:** `html2canvas` ya está instalado
+  (`node_modules/html2canvas` v1.4.1) y ya se usa en `src/lib/pdfExport.ts`
+  para lo mismo (DOM a canvas, para el PDF de fichas). Se reutiliza tal
+  cual: `html2canvas(nodo, { width: 1080, height: 1080 })` seguido de
+  `canvas.toDataURL('image/jpeg', 0.85)`. De paso se agrega `html2canvas`
+  a `package.json` como dependencia directa (hoy es transitiva -- llega
+  instalada porque alguna otra dependencia la trae, no porque el proyecto
+  la declare -- y `pdfExport.ts` ya confía en que esté ahí; declararla
+  explícitamente corrige ese riesgo latente de raíz para ambos usos, no
+  solo para este nuevo). Se usa JPEG y no PNG -- un PNG de una foto real
+  pesa varias veces más que un JPEG comparable, y ya nos mordió una vez el
+  límite de ~4.5MB por request de las funciones de Vercel (bug real de
+  fotos de propiedad, corregido antes con compresión en canvas). Usar JPEG
+  aquí evita reabrir ese mismo problema.
 - `api/felmat-upload-anuncio-image.js` -- nuevo endpoint. **Corrección
   importante:** este repo no tiene un solo patrón de autenticación para
   `api/*.js` -- `felmat-social-config.js` usa `getSession` (sesión real de
