@@ -22,7 +22,9 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'dataUrl inválido -- se espera un data URL de imagen en base64' });
     }
 
-    const ext = parsed.contentType.split('/')[1] || 'jpg';
+    // Corta en '+' (ej. "image/svg+xml" -> "svg") para nunca escribir una
+    // extensión inválida como ".svg+xml" en el nombre del blob.
+    const ext = parsed.contentType.split('/')[1]?.split('+')[0] || 'jpg';
     const blob = await put(`anuncios/${randomUUID()}.${ext}`, parsed.buffer, {
       access: 'public',
       contentType: parsed.contentType,
