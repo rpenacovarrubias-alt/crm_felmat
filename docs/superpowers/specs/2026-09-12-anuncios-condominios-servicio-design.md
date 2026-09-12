@@ -160,15 +160,28 @@ que hoy -- ningún cambio visible para Airbnb.
   comparable, y ya nos mordió una vez el límite de ~4.5MB por request de las
   funciones de Vercel (bug real de fotos de propiedad, corregido antes con
   compresión en canvas). Usar JPEG aquí evita reabrir ese mismo problema.
-- `api/felmat-upload-anuncio-image.js` -- nuevo endpoint, requiere sesión
-  válida (`getSession`, mismo patrón que el resto de `api/*.js`), recibe un
-  `{ dataUrl: string }` (igual que ya se hace con `ImagenAnuncio.url` hoy,
-  sin librería de multipart nueva), decodifica el base64 y lo sube a Vercel
-  Blob (`@vercel/blob`, nueva dependencia) con `access: 'public'`, regresa
-  la URL pública. Se usa dos veces por diapositiva: una vez para la foto
-  cruda recién subida (se guarda en `ImagenAnuncio.url`) y otra vez para el
-  resultado compuesto (se guarda en `imagenCompuestaUrl`) -- mismo endpoint,
-  dos llamadas, sin duplicar código.
+- `api/felmat-upload-anuncio-image.js` -- nuevo endpoint. **Corrección
+  importante:** este repo no tiene un solo patrón de autenticación para
+  `api/*.js` -- `felmat-social-config.js` usa `getSession` (sesión real de
+  usuario), pero todo el subsistema de Anuncios (`api/anuncios.js`,
+  `api/anuncios/[id].js`, `api/publicar.js`) usa `requireApiKey` (un
+  secreto compartido `ANUNCIOS_API_KEY`, ver `api/_lib/auth.js` --
+  "el CRM no tiene sesiones server-side todavía", comentario ya desactualizado
+  pero fiel a cómo funciona hoy este subsistema en particular). Este endpoint
+  nuevo vive del lado de Anuncios y lo llama `anunciosApi.ts` (cuyo
+  `apiFetch` ya manda el Bearer de `ANUNCIOS_API_KEY` en cada request, no
+  una cookie de sesión) -- así que usa **`requireApiKey`**, igual que sus
+  vecinos, no `getSession`. Arreglar el modelo de autenticación de todo el
+  subsistema de Anuncios es un problema real pero separado, fuera de
+  alcance aquí.
+  Recibe un `{ dataUrl: string }` (igual que ya se hace con
+  `ImagenAnuncio.url` hoy, sin librería de multipart nueva), decodifica el
+  base64 y lo sube a Vercel Blob (`@vercel/blob`, nueva dependencia) con
+  `access: 'public'`, regresa la URL pública. Se usa dos veces por
+  diapositiva: una vez para la foto cruda recién subida (se guarda en
+  `ImagenAnuncio.url`) y otra vez para el resultado compuesto (se guarda en
+  `imagenCompuestaUrl`) -- mismo endpoint, dos llamadas, sin duplicar
+  código.
 - **Prerrequisito de infraestructura:** este endpoint necesita que el
   proyecto de Vercel tenga un Blob store creado y la variable de entorno
   `BLOB_READ_WRITE_TOKEN` configurada. Es un paso manual de una sola vez en
