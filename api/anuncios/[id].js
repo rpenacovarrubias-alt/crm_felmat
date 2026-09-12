@@ -3,6 +3,19 @@ import { requireApiKey } from '../_lib/auth.js';
 
 const prisma = new PrismaClient();
 
+const CAMPOS_PROPIEDAD_REQUERIDOS = ['colonia', 'ciudad', 'precio', 'tipoPropiedad', 'modalidadRenta'];
+
+function validarCamposPropiedad(data) {
+  if (data.categoria === 'SERVICIO') return null;
+  const faltantes = CAMPOS_PROPIEDAD_REQUERIDOS.filter(
+    (campo) => data[campo] === undefined || data[campo] === null || data[campo] === ''
+  );
+  if (faltantes.length > 0) {
+    return `Faltan campos obligatorios para un anuncio de propiedad: ${faltantes.join(', ')}`;
+  }
+  return null;
+}
+
 export default async function handler(req, res) {
   if (!requireApiKey(req, res)) return;
 
@@ -35,6 +48,17 @@ export default async function handler(req, res) {
       delete data.createdAt;
       delete data.updatedAt;
       delete data.slug;
+      delete data.categoria; // inmutable después de crear -- ver spec
+
+      const errorValidacion = await (async () => {
+        const actual = await prisma.anuncio.findUnique({ where: { id }, select: { categoria: true } });
+        if (!actual) return null; // el 404 lo maneja Prisma más abajo
+        return validarCamposPropiedad({ ...data, categoria: actual.categoria });
+      })();
+      if (errorValidacion) {
+        return res.status(400).json({ error: errorValidacion });
+      }
+
       const imagenes = data.imagenes;
       delete data.imagenes;
       delete data.publicaciones;
@@ -46,7 +70,14 @@ export default async function handler(req, res) {
           ...(imagenes ? {
             imagenes: {
               deleteMany: {},
-              create: imagenes.map((img, i) => ({ url: img.url, esPrincipal: img.esPrincipal, orden: i })),
+              create: imagenes.map((img, i) => ({
+                url: img.url,
+                esPrincipal: img.esPrincipal,
+                orden: i,
+                headline: img.headline || null,
+                subtitulo: img.subtitulo || null,
+                imagenCompuestaUrl: img.imagenCompuestaUrl || null,
+              })),
             },
           } : {}),
         },

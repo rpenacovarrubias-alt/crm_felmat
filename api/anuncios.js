@@ -3,6 +3,19 @@ import { requireApiKey } from './_lib/auth.js';
 
 const prisma = new PrismaClient();
 
+const CAMPOS_PROPIEDAD_REQUERIDOS = ['colonia', 'ciudad', 'precio', 'tipoPropiedad', 'modalidadRenta'];
+
+function validarCamposPropiedad(data) {
+  if (data.categoria === 'SERVICIO') return null;
+  const faltantes = CAMPOS_PROPIEDAD_REQUERIDOS.filter(
+    (campo) => data[campo] === undefined || data[campo] === null || data[campo] === ''
+  );
+  if (faltantes.length > 0) {
+    return `Faltan campos obligatorios para un anuncio de propiedad: ${faltantes.join(', ')}`;
+  }
+  return null;
+}
+
 export default async function handler(req, res) {
   if (!requireApiKey(req, res)) return;
 
@@ -50,6 +63,12 @@ export default async function handler(req, res) {
   if (req.method === 'POST') {
     try {
       const data = req.body;
+
+      const errorValidacion = validarCamposPropiedad(data);
+      if (errorValidacion) {
+        return res.status(400).json({ error: errorValidacion });
+      }
+
       const imagenes = data.imagenes;
       delete data.imagenes;
       const slugBase = data.titulo.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
@@ -62,7 +81,14 @@ export default async function handler(req, res) {
           estado: 'BORRADOR',
           ...(imagenes?.length ? {
             imagenes: {
-              create: imagenes.map((img, i) => ({ url: img.url, esPrincipal: img.esPrincipal, orden: i })),
+              create: imagenes.map((img, i) => ({
+                url: img.url,
+                esPrincipal: img.esPrincipal,
+                orden: i,
+                headline: img.headline || null,
+                subtitulo: img.subtitulo || null,
+                imagenCompuestaUrl: img.imagenCompuestaUrl || null,
+              })),
             },
           } : {}),
         },
