@@ -2,8 +2,10 @@ import { put } from '@vercel/blob';
 import { randomUUID } from 'crypto';
 import { requireApiKey } from './_lib/auth.js';
 
+const MAX_BYTES = 5 * 1024 * 1024;
+
 function parseDataUrl(dataUrl) {
-  const match = /^data:(image\/[a-zA-Z+]+);base64,(.+)$/.exec(dataUrl || '');
+  const match = /^data:(image\/(?:jpeg|png));base64,(.+)$/.exec(dataUrl || '');
   if (!match) return null;
   const [, contentType, base64] = match;
   return { contentType, buffer: Buffer.from(base64, 'base64') };
@@ -16,10 +18,18 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+    return res.status(500).json({ error: 'BLOB_READ_WRITE_TOKEN no está configurada en el servidor' });
+  }
+
   try {
     const parsed = parseDataUrl(req.body?.dataUrl);
     if (!parsed) {
       return res.status(400).json({ error: 'dataUrl inválido -- se espera un data URL de imagen en base64' });
+    }
+
+    if (parsed.buffer.length > MAX_BYTES) {
+      return res.status(400).json({ error: 'La imagen es demasiado grande (máximo 5MB)' });
     }
 
     // Corta en '+' (ej. "image/svg+xml" -> "svg") para nunca escribir una

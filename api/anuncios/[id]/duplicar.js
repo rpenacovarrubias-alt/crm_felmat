@@ -29,6 +29,7 @@ export default async function handler(req, res) {
       data: {
         agentId: original.agentId,
         modo: original.modo,
+        categoria: original.categoria,
         titulo: `${original.titulo} (Copia)`,
         subtitulo: original.subtitulo,
         slug: nuevoSlug,
@@ -51,6 +52,9 @@ export default async function handler(req, res) {
             url: img.url,
             esPrincipal: img.esPrincipal,
             orden: img.orden,
+            headline: img.headline,
+            subtitulo: img.subtitulo,
+            imagenCompuestaUrl: img.imagenCompuestaUrl,
           })),
         },
       },

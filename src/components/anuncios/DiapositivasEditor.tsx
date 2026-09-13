@@ -15,38 +15,46 @@ const MAX_DIAPOSITIVAS = 10;
 
 interface DiapositivasEditorProps {
   slides: ImagenAnuncio[];
-  onChange: (slides: ImagenAnuncio[]) => void;
+  onChange: (update: ImagenAnuncio[] | ((prev: ImagenAnuncio[]) => ImagenAnuncio[])) => void;
   contacto: ContactoPlantilla;
 }
 
 export function DiapositivasEditor({ slides, onChange, contacto }: DiapositivasEditorProps) {
   const [generandoIdx, setGenerandoIdx] = useState<number | null>(null);
   const renderRef = useRef<HTMLDivElement>(null);
+  // Serializa las composiciones: si se dispara una segunda composición
+  // mientras la primera sigue esperando su timer/html2canvas, el portal
+  // offscreen ya habría cambiado de diapositiva y html2canvas capturaría
+  // la diapositiva equivocada. Encolar garantiza una composición a la vez.
+  const colaRef = useRef<Promise<void>>(Promise.resolve());
 
-  // Recibe explícitamente el array base sobre el que fusionar el resultado
-  // -- NUNCA cierra sobre el `slides` externo directamente, porque
-  // handleFoto ya avanzó el estado (onChange(nuevas)) antes de llamar aquí,
-  // y este closure quedaría con una copia vieja de `slides` durante los
-  // ~300ms+ que tarda componer(). Fusionar contra esa copia vieja borraría
-  // la `url` recién subida (bug real de stale closure, no hipotético).
-  const componer = async (idx: number, baseSlides: ImagenAnuncio[]) => {
-    const fotoUrl = baseSlides[idx]?.url;
+  // Usa el updater funcional de onChange (siempre setImagenes de useState en
+  // AnuncioForm) en vez de un snapshot `baseSlides` -- así el merge final
+  // siempre parte del estado más reciente sin importar cuánto tarde
+  // componer() (300ms + html2canvas + upload), evitando que se pise texto
+  // que el usuario siguió editando mientras tanto.
+  const componer = async (idx: number) => {
+    const fotoUrl = slides[idx]?.url;
     if (!fotoUrl) return;
-    setGenerandoIdx(idx);
-    try {
-      // Se monta la plantilla real fuera de pantalla (vía portal a renderRef)
-      // y se espera un frame para que la imagen de fondo cargue antes de
-      // capturar -- si no, html2canvas puede capturar el fondo vacío.
-      await new Promise((resolve) => setTimeout(resolve, 300));
-      if (!renderRef.current) return;
-      const dataUrl = await generarImagenAnuncio(renderRef.current);
-      const { url } = await subirImagenAnuncio(dataUrl);
-      onChange(baseSlides.map((s, i) => (i === idx ? { ...s, imagenCompuestaUrl: url } : s)));
-    } catch (error) {
-      toast.error('No se pudo componer la diapositiva. Intenta de nuevo.');
-    } finally {
-      setGenerandoIdx(null);
-    }
+    const ejecutar = async () => {
+      setGenerandoIdx(idx);
+      try {
+        // Se monta la plantilla real fuera de pantalla (vía portal a renderRef)
+        // y se espera un frame para que la imagen de fondo cargue antes de
+        // capturar -- si no, html2canvas puede capturar el fondo vacío.
+        await new Promise((resolve) => setTimeout(resolve, 300));
+        if (!renderRef.current) return;
+        const dataUrl = await generarImagenAnuncio(renderRef.current);
+        const { url } = await subirImagenAnuncio(dataUrl);
+        onChange((prev) => prev.map((s, i) => (i === idx ? { ...s, imagenCompuestaUrl: url } : s)));
+      } catch (error) {
+        toast.error('No se pudo componer la diapositiva. Intenta de nuevo.');
+      } finally {
+        setGenerandoIdx(null);
+      }
+    };
+    colaRef.current = colaRef.current.then(ejecutar);
+    await colaRef.current;
   };
 
   const handleFoto = async (idx: number, file: File) => {
@@ -55,14 +63,14 @@ export function DiapositivasEditor({ slides, onChange, contacto }: DiapositivasE
       const { url } = await subirImagenAnuncio(dataUrl);
       const nuevas = slides.map((s, i) => (i === idx ? { ...s, url, imagenCompuestaUrl: '' } : s));
       onChange(nuevas);
-      await componer(idx, nuevas);
+      await componer(idx);
     } catch (error) {
       toast.error('No se pudo subir la foto. Intenta de nuevo.');
     }
   };
 
   const handleTextoBlur = (idx: number) => {
-    componer(idx, slides);
+    componer(idx);
   };
 
   const actualizarCampo = (idx: number, campo: 'headline' | 'subtitulo', valor: string) => {

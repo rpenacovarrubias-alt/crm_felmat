@@ -153,7 +153,7 @@ export function AnuncioDetail() {
             <div className="grid grid-cols-4 gap-2">
               {anuncio.imagenes.map((img, i) => (
                 <div key={i} className="aspect-square rounded overflow-hidden bg-muted">
-                  <img src={img.url} alt="" className="w-full h-full object-cover" />
+                  <img src={img.imagenCompuestaUrl || img.url} alt="" className="w-full h-full object-cover" />
                 </div>
               ))}
             </div>

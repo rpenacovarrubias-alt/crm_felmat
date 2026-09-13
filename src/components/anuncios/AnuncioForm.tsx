@@ -203,7 +203,9 @@ export function AnuncioForm() {
   }, [id, basePath, navigate]);
 
   const esServicio = categoria === 'SERVICIO';
-  const puedeGuardar = esServicio ? !!titulo.trim() : !!(titulo.trim() && colonia.trim() && ciudad.trim());
+  const puedeGuardar = esServicio
+    ? !!titulo.trim() && imagenes.length > 0 && imagenes.every((s) => !!s.url)
+    : !!(titulo.trim() && colonia.trim() && ciudad.trim());
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
