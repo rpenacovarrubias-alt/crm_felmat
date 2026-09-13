@@ -14,6 +14,7 @@ import { DiapositivasEditor } from './DiapositivasEditor';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -351,12 +352,7 @@ export function AnuncioForm() {
                 </div>
                 <div className="space-y-1.5 sm:col-span-2">
                   <Label>Descripción</Label>
-                  <textarea
-                    value={descripcion}
-                    onChange={(e) => setDescripcion(e.target.value)}
-                    rows={4}
-                    className="border-input placeholder:text-muted-foreground flex field-sizing-content min-h-16 w-full rounded-md border bg-transparent px-3 py-2 text-base shadow-xs outline-none md:text-sm"
-                  />
+                  <Textarea value={descripcion} onChange={(e) => setDescripcion(e.target.value)} rows={4} />
                 </div>
                 <div className="flex items-center justify-between sm:col-span-2">
                   <Label htmlFor="destacado">Destacado</Label>
