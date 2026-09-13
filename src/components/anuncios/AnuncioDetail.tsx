@@ -5,7 +5,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import {
-  obtenerAnuncio, publicarAnuncio, eliminarAnuncio, duplicarAnuncio,
+  obtenerAnuncio, publicarAnuncio, eliminarAnuncio, duplicarAnuncio, resolverContextoAnuncio,
   type Anuncio,
 } from '@/lib/anunciosApi';
 import { TIPOS_PROPIEDAD, MODALIDADES } from './ListaAnuncios';
@@ -32,8 +32,7 @@ export function AnuncioDetail() {
   const navigate = useNavigate();
   const location = useLocation();
   const { id } = useParams<{ id: string }>();
-  const modo = location.pathname.startsWith('/airbnb') ? 'airbnb' : 'admin';
-  const basePath = modo === 'admin' ? '' : '/airbnb';
+  const { rutaBase: basePath } = resolverContextoAnuncio(location.pathname);
 
   const [anuncio, setAnuncio] = useState<Anuncio | null>(null);
   const [loading, setLoading] = useState(true);
@@ -54,7 +53,7 @@ export function AnuncioDetail() {
     try {
       await eliminarAnuncio(anuncio.id);
       toast.success('Anuncio eliminado');
-      navigate(`${basePath}/anuncios`);
+      navigate(basePath);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Error al eliminar');
     }
@@ -65,7 +64,7 @@ export function AnuncioDetail() {
     try {
       const nuevo = await duplicarAnuncio(anuncio.id);
       toast.success('Anuncio duplicado');
-      navigate(`${basePath}/anuncios/${nuevo.id}/editar`);
+      navigate(`${basePath}/${nuevo.id}/editar`);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Error al duplicar');
     }
@@ -98,7 +97,7 @@ export function AnuncioDetail() {
       <div className="p-6 text-center text-muted-foreground">
         Anuncio no encontrado.
         <div className="mt-4">
-          <Button variant="outline" onClick={() => navigate(`${basePath}/anuncios`)}>Volver</Button>
+          <Button variant="outline" onClick={() => navigate(basePath)}>Volver</Button>
         </div>
       </div>
     );
@@ -111,7 +110,7 @@ export function AnuncioDetail() {
     <div className="p-6 space-y-6 max-w-4xl mx-auto">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Button variant="outline" size="icon" onClick={() => navigate(`${basePath}/anuncios`)}>
+          <Button variant="outline" size="icon" onClick={() => navigate(basePath)}>
             <ArrowLeft className="w-4 h-4" />
           </Button>
           <div>
@@ -124,7 +123,7 @@ export function AnuncioDetail() {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => navigate(`${basePath}/anuncios/${anuncio.id}/editar`)}>
+          <Button variant="outline" onClick={() => navigate(`${basePath}/${anuncio.id}/editar`)}>
             <Edit className="w-4 h-4 mr-2" />Editar
           </Button>
           <Button variant="outline" onClick={handleDuplicar}>

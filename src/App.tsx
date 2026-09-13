@@ -106,6 +106,14 @@ function AppRoutes() {
             <Route path="/propiedades/desempeno" element={<PropertyPerformance />} />
             <Route path="/propiedades/redes-sociales" element={<RedesSociales section="propiedades" />} />
             <Route path="/propiedades/redes-sociales/:platform" element={<SocialConfigForm section="propiedades" />} />
+            <Route path="/propiedades/ficha" element={<Anuncios />} />
+            <Route path="/propiedades/ficha/nuevo" element={<AnuncioForm />} />
+            <Route path="/propiedades/ficha/:id" element={<AnuncioDetail />} />
+            <Route path="/propiedades/ficha/:id/editar" element={<AnuncioForm />} />
+            <Route path="/propiedades/anuncios" element={<Anuncios />} />
+            <Route path="/propiedades/anuncios/nuevo" element={<AnuncioForm />} />
+            <Route path="/propiedades/anuncios/:id" element={<AnuncioDetail />} />
+            <Route path="/propiedades/anuncios/:id/editar" element={<AnuncioForm />} />
             <Route path="/propiedades/:id" element={<PropertyDetail />} />
             <Route path="/propiedades/:id/edit" element={<PropertyForm />} />
             <Route path="/estimaciones" element={<EstimacionesPage />} />

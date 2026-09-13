@@ -21,13 +21,14 @@ export default async function handler(req, res) {
 
   if (req.method === 'GET') {
     try {
-      const { estado, tipo, modalidad, modo, agentId, q: busqueda, ordenar = 'recientes' } = req.query;
+      const { estado, tipo, modalidad, modo, categoria, agentId, q: busqueda, ordenar = 'recientes' } = req.query;
 
       const where = {};
       if (estado && estado !== ' ') where.estado = estado;
       if (tipo && tipo !== ' ') where.tipoPropiedad = tipo;
       if (modalidad && modalidad !== ' ') where.modalidadRenta = modalidad;
       if (modo) where.modo = modo;
+      if (categoria) where.categoria = categoria;
       if (agentId) where.agentId = agentId;
 
       if (busqueda) {

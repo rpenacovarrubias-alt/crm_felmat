@@ -87,6 +87,8 @@ const propertiesGroup: NavGroup = {
     { label: 'Vinculaciones', href: '/vinculaciones', icon: Link2 },
     { label: 'Listas compartidas', href: '/listas-compartidas', icon: Share2 },
     { label: 'Desempeño', href: '/propiedades/desempeno', icon: TrendingUp },
+    { label: 'Ficha', href: '/propiedades/ficha', icon: FileText },
+    { label: 'Anuncios', href: '/propiedades/anuncios', icon: Megaphone },
     { label: 'Redes Sociales', href: '/propiedades/redes-sociales', icon: Share2 },
   ],
 };

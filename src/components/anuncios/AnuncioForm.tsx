@@ -6,7 +6,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import {
-  obtenerAnuncio, crearAnuncio, actualizarAnuncio,
+  obtenerAnuncio, crearAnuncio, actualizarAnuncio, resolverContextoAnuncio,
   type Anuncio, type ImagenAnuncio, type CategoriaAnuncio,
 } from '@/lib/anunciosApi';
 import { TIPOS_PROPIEDAD, MODALIDADES } from './ListaAnuncios';
@@ -155,11 +155,8 @@ export function AnuncioForm() {
   const location = useLocation();
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
-  const modo = location.pathname.startsWith('/airbnb') ? 'airbnb' : 'admin';
-  const basePath = modo === 'admin' ? '' : '/airbnb';
+  const { modo, categoria: categoriaInicial, rutaBase: basePath } = resolverContextoAnuncio(location.pathname);
   const isEditing = !!id;
-  // /anuncios (Condominios) crea SERVICIO desde ahora; /airbnb sigue en PROPIEDAD.
-  const categoriaInicial: CategoriaAnuncio = modo === 'admin' ? 'SERVICIO' : 'PROPIEDAD';
 
   const [loading, setLoading] = useState(isEditing);
   const [saving, setSaving] = useState(false);
@@ -201,7 +198,7 @@ export function AnuncioForm() {
       setLoading(false);
     }).catch(() => {
       toast.error('No se pudo cargar el anuncio');
-      navigate(`${basePath}/anuncios`);
+      navigate(basePath);
     });
   }, [id, basePath, navigate]);
 
@@ -244,7 +241,7 @@ export function AnuncioForm() {
         await crearAnuncio({ ...data, agentId: user.id, modo, categoria, slug: generateSlug(titulo) });
         toast.success('Anuncio creado como borrador');
       }
-      navigate(`${basePath}/anuncios`);
+      navigate(basePath);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Error al guardar el anuncio');
     } finally {
@@ -263,7 +260,7 @@ export function AnuncioForm() {
   return (
     <div className="p-6 space-y-6 max-w-4xl mx-auto">
       <div className="flex items-center gap-3">
-        <Button variant="outline" size="icon" onClick={() => navigate(`${basePath}/anuncios`)}>
+        <Button variant="outline" size="icon" onClick={() => navigate(basePath)}>
           <ArrowLeft className="w-4 h-4" />
         </Button>
         <div>
@@ -402,7 +399,7 @@ export function AnuncioForm() {
         )}
 
         <div className="flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={() => navigate(`${basePath}/anuncios`)}>Cancelar</Button>
+          <Button type="button" variant="outline" onClick={() => navigate(basePath)}>Cancelar</Button>
           <Button type="submit" disabled={saving || !puedeGuardar}>
             {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
             {isEditing ? 'Guardar cambios' : 'Crear anuncio'}
