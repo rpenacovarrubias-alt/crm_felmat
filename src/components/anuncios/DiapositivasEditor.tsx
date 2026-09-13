@@ -33,8 +33,14 @@ export function DiapositivasEditor({ slides, onChange, contacto }: DiapositivasE
   // siempre parte del estado más reciente sin importar cuánto tarde
   // componer() (300ms + html2canvas + upload), evitando que se pise texto
   // que el usuario siguió editando mientras tanto.
-  const componer = async (idx: number) => {
-    const fotoUrl = slides[idx]?.url;
+  //
+  // `fotoUrl` SÍ se recibe explícito (no `slides[idx]?.url`): handleFoto
+  // llama a componer() en el mismo tick que su propio onChange(nuevas),
+  // antes de que React vuelva a renderizar -- leer `slides` aquí adentro
+  // seguiría cerrando sobre el array viejo (sin la foto recién subida) y
+  // la composición se saltaría siempre en la primera foto de una
+  // diapositiva nueva.
+  const componer = async (idx: number, fotoUrl: string) => {
     if (!fotoUrl) return;
     const ejecutar = async () => {
       setGenerandoIdx(idx);
@@ -63,14 +69,14 @@ export function DiapositivasEditor({ slides, onChange, contacto }: DiapositivasE
       const { url } = await subirImagenAnuncio(dataUrl);
       const nuevas = slides.map((s, i) => (i === idx ? { ...s, url, imagenCompuestaUrl: '' } : s));
       onChange(nuevas);
-      await componer(idx);
+      await componer(idx, url);
     } catch (error) {
       toast.error('No se pudo subir la foto. Intenta de nuevo.');
     }
   };
 
   const handleTextoBlur = (idx: number) => {
-    componer(idx);
+    componer(idx, slides[idx]?.url || '');
   };
 
   const actualizarCampo = (idx: number, campo: 'headline' | 'subtitulo', valor: string) => {
