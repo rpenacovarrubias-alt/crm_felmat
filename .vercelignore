@@ -1,0 +1,5 @@
+# Los archivos de prueba dentro de api/ no son endpoints reales, pero Vercel
+# los cuenta como Serverless Function si no se excluyen -- eso empujó el
+# conteo total por encima del límite de 12 funciones del plan Hobby y tumbó
+# el deploy (api/felmat-social-config.test.js contaba como la función #13).
+api/**/*.test.js
