@@ -188,25 +188,35 @@ export function AnuncioForm() {
 
   const [componiendoFicha, setComponiendoFicha] = useState(false);
   const renderFichaRef = useRef<HTMLDivElement>(null);
+  // Serializa las composiciones: colonia/ciudad/precio pueden perder el foco
+  // uno tras otro muy rápido (tabbing), cada uno disparando su propio
+  // componerFicha() contra el mismo renderFichaRef -- sin encolar, la
+  // composición que responda primero podría escribir su resultado DESPUÉS
+  // de una más reciente y pisarla con una imagen vieja. Mismo patrón ya en
+  // producción para Condominios (DiapositivasEditor.tsx, colaRef).
+  const colaFichaRef = useRef<Promise<void>>(Promise.resolve());
 
-  // Mismo patrón ya en producción para Condominios (DiapositivasEditor.tsx):
-  // se recibe fotoUrl explícito (nunca se lee `imagenes` por dentro) para no
+  // Se recibe fotoUrl explícito (nunca se lee `imagenes` por dentro) para no
   // cerrar sobre un array desactualizado cuando se llama en el mismo tick
-  // que un onChange previo (ver el bug real ya corregido ahí).
+  // que un onChange previo (ver el bug real ya corregido en DiapositivasEditor.tsx).
   const componerFicha = async (fotoUrl: string) => {
     if (!fotoUrl) return;
-    setComponiendoFicha(true);
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 300));
-      if (!renderFichaRef.current) return;
-      const dataUrl = await generarImagenAnuncio(renderFichaRef.current);
-      const { url } = await subirImagenAnuncio(dataUrl);
-      setImagenes((prev) => prev.map((img) => (img.esPrincipal ? { ...img, imagenCompuestaUrl: url } : img)));
-    } catch (error) {
-      toast.error('No se pudo componer la imagen del anuncio. Intenta de nuevo.');
-    } finally {
-      setComponiendoFicha(false);
-    }
+    const ejecutar = async () => {
+      setComponiendoFicha(true);
+      try {
+        await new Promise((resolve) => setTimeout(resolve, 300));
+        if (!renderFichaRef.current) return;
+        const dataUrl = await generarImagenAnuncio(renderFichaRef.current);
+        const { url } = await subirImagenAnuncio(dataUrl);
+        setImagenes((prev) => prev.map((img) => (img.esPrincipal ? { ...img, imagenCompuestaUrl: url } : img)));
+      } catch (error) {
+        toast.error('No se pudo componer la imagen del anuncio. Intenta de nuevo.');
+      } finally {
+        setComponiendoFicha(false);
+      }
+    };
+    colaFichaRef.current = colaFichaRef.current.then(ejecutar);
+    await colaFichaRef.current;
   };
 
   const handleFichaBlur = () => {
