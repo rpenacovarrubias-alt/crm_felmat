@@ -22,6 +22,7 @@ export interface PublicacionAnuncio {
   canal: string;
   estado: string;
   externalUrl?: string;
+  errorMsg?: string;
   publicadoAt?: string;
 }
 

@@ -195,6 +195,7 @@ export function AnuncioDetail() {
                 const pub = anuncio.publicaciones.find(p => p.canal === canal);
                 const publicado = pub?.estado === 'PUBLICADO';
                 const pendiente = pub?.estado === 'PENDIENTE';
+                const conError = pub?.estado === 'ERROR';
                 return (
                   <div key={canal} className="flex items-center justify-between text-sm">
                     <span className="flex items-center gap-2">
@@ -205,6 +206,17 @@ export function AnuncioDetail() {
                       <span className="text-xs text-green-600">Publicado</span>
                     ) : pendiente ? (
                       <span className="text-xs text-amber-600">Pendiente</span>
+                    ) : conError ? (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        disabled={publicando}
+                        onClick={() => handlePublicarCanal(canal)}
+                        title={pub?.errorMsg || 'Error al publicar'}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        Reintentar
+                      </Button>
                     ) : (
                       <Button size="sm" variant="ghost" disabled={publicando} onClick={() => handlePublicarCanal(canal)}>
                         Publicar

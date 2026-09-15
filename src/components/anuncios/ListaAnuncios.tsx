@@ -170,7 +170,7 @@ export default function ListaAnuncios({
       PENDIENTE: { color: 'bg-yellow-400', textColor: 'text-yellow-600', label: 'Pendiente' },
       ERROR: { color: 'bg-red-500', textColor: 'text-red-600', label: 'Error' },
     };
-    return { estado: pub.estado.toLowerCase(), ...estados[pub.estado] || { color: 'bg-gray-400', textColor: 'text-gray-500', label: pub.estado } };
+    return { estado: pub.estado.toLowerCase(), errorMsg: pub.errorMsg, ...estados[pub.estado] || { color: 'bg-gray-400', textColor: 'text-gray-500', label: pub.estado } };
   };
 
   const formatPrice = (precio: number, moneda: string = 'MXN', periodo: string = '/mes') => {
@@ -245,7 +245,7 @@ export default function ListaAnuncios({
                   const pub = getEstadoPublicacion(anuncio, canal);
                   const CanalIcon = CANALES[canal].icon;
                   return (
-                    <div key={canal} className={cn("w-8 h-8 rounded-full flex items-center justify-center border-2 transition-colors", pub.estado === 'publicado' ? "bg-green-100 border-green-500" : "bg-gray-50 border-gray-200")} title={`${CANALES[canal].label}: ${pub.label}`}>
+                    <div key={canal} className={cn("w-8 h-8 rounded-full flex items-center justify-center border-2 transition-colors", pub.estado === 'publicado' ? "bg-green-100 border-green-500" : "bg-gray-50 border-gray-200")} title={pub.estado === 'error' && pub.errorMsg ? `${CANALES[canal].label}: ${pub.label} — ${pub.errorMsg}` : `${CANALES[canal].label}: ${pub.label}`}>
                       <CanalIcon className={cn("w-4 h-4", pub.estado === 'publicado' ? pub.textColor : "text-gray-400")} />
                     </div>
                   );
@@ -313,7 +313,7 @@ export default function ListaAnuncios({
                       const pub = getEstadoPublicacion(anuncio, canal);
                       const CanalIcon = CANALES[canal].icon;
                       return (
-                        <div key={canal} className={cn("w-8 h-8 rounded-full flex items-center justify-center border-2 transition-colors", pub.estado === 'publicado' ? "border-green-500 bg-green-50" : "border-gray-200 bg-gray-50")} title={`${CANALES[canal].label}: ${pub.label}`}>
+                        <div key={canal} className={cn("w-8 h-8 rounded-full flex items-center justify-center border-2 transition-colors", pub.estado === 'publicado' ? "border-green-500 bg-green-50" : "border-gray-200 bg-gray-50")} title={pub.estado === 'error' && pub.errorMsg ? `${CANALES[canal].label}: ${pub.label} — ${pub.errorMsg}` : `${CANALES[canal].label}: ${pub.label}`}>
                           <CanalIcon className={cn("w-3.5 h-3.5", pub.estado === 'publicado' ? pub.textColor : "text-gray-400")} />
                         </div>
                       );
