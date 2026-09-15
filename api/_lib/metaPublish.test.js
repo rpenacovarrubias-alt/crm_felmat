@@ -33,6 +33,12 @@ describe('metaPublish', () => {
     expect(resultado).toEqual({ success: false, errorMsg: 'Invalid OAuth access token' });
   });
 
+  it('publicarFacebookImagenUnica: 200 OK con json.error en el body igual cuenta como fallo', async () => {
+    global.fetch = vi.fn().mockResolvedValueOnce(mockFetchOnce({ error: { message: 'Session has expired' } }, true, 200));
+    const resultado = await publicarFacebookImagenUnica({ accountId: '123', accessToken: 'expirado', imageUrl: 'https://x/img.jpg', caption: '' });
+    expect(resultado).toEqual({ success: false, errorMsg: 'Session has expired' });
+  });
+
   it('publicarFacebookCarrusel: sube cada foto sin publicar y las adjunta en un solo post', async () => {
     global.fetch = vi.fn()
       .mockResolvedValueOnce(mockFetchOnce({ id: 'p1' }))
@@ -41,6 +47,23 @@ describe('metaPublish', () => {
     const resultado = await publicarFacebookCarrusel({ accountId: '123', accessToken: 'tok', imageUrls: ['https://x/1.jpg', 'https://x/2.jpg'], caption: 'carrusel' });
     expect(resultado).toEqual({ success: true, externalId: '123_789', externalUrl: 'https://www.facebook.com/123_789' });
     expect(global.fetch).toHaveBeenCalledTimes(3);
+
+    const [url0, options0] = global.fetch.mock.calls[0];
+    expect(url0).toBe('https://graph.facebook.com/v21.0/123/photos');
+    expect(options0.method).toBe('POST');
+    const body0 = new URLSearchParams(options0.body);
+    expect(body0.get('url')).toBe('https://x/1.jpg');
+    expect(body0.get('published')).toBe('false');
+    expect(body0.has('caption')).toBe(false);
+
+    const [url1, options1] = global.fetch.mock.calls[1];
+    expect(url1).toBe('https://graph.facebook.com/v21.0/123/photos');
+    expect(options1.method).toBe('POST');
+    const body1 = new URLSearchParams(options1.body);
+    expect(body1.get('url')).toBe('https://x/2.jpg');
+    expect(body1.get('published')).toBe('false');
+    expect(body1.has('caption')).toBe(false);
+
     const feedCall = global.fetch.mock.calls[2];
     expect(feedCall[0]).toBe('https://graph.facebook.com/v21.0/123/feed');
     const feedBody = new URLSearchParams(feedCall[1].body);
@@ -54,6 +77,26 @@ describe('metaPublish', () => {
       .mockResolvedValueOnce(mockFetchOnce({ permalink: 'https://www.instagram.com/p/ABC123/' }));
     const resultado = await publicarInstagramImagenUnica({ accountId: '999', accessToken: 'tok', imageUrl: 'https://x/img.jpg', caption: 'hola ig' });
     expect(resultado).toEqual({ success: true, externalId: 'media1', externalUrl: 'https://www.instagram.com/p/ABC123/' });
+    expect(global.fetch).toHaveBeenCalledTimes(3);
+
+    const [createUrl, createOptions] = global.fetch.mock.calls[0];
+    expect(createUrl).toBe('https://graph.facebook.com/v21.0/999/media');
+    expect(createOptions.method).toBe('POST');
+    const createBody = new URLSearchParams(createOptions.body);
+    expect(createBody.get('image_url')).toBe('https://x/img.jpg');
+    expect(createBody.get('caption')).toBe('hola ig');
+    expect(createBody.get('access_token')).toBe('tok');
+
+    const [publishUrl, publishOptions] = global.fetch.mock.calls[1];
+    expect(publishUrl).toBe('https://graph.facebook.com/v21.0/999/media_publish');
+    expect(publishOptions.method).toBe('POST');
+    const publishBody = new URLSearchParams(publishOptions.body);
+    expect(publishBody.get('creation_id')).toBe('creation1');
+    expect(publishBody.get('access_token')).toBe('tok');
+
+    const [permalinkUrl, permalinkOptions] = global.fetch.mock.calls[2];
+    expect(permalinkUrl).toBe('https://graph.facebook.com/v21.0/media1?fields=permalink&access_token=tok');
+    expect(permalinkOptions).toBeUndefined();
   });
 
   it('publicarInstagramCarrusel: rechaza con menos de 2 imágenes sin llamar a fetch', async () => {
