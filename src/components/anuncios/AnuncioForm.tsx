@@ -179,7 +179,7 @@ export function AnuncioForm() {
   const [colonia, setColonia] = useState('');
   const [ciudad, setCiudad] = useState('');
   const [precio, setPrecio] = useState('');
-  const [periodo, setPeriodo] = useState('/mes');
+  const [periodo, setPeriodo] = useState(modo === 'airbnb' ? '/noche' : '/mes');
   const [moneda, setMoneda] = useState('MXN');
   const [recamaras, setRecamaras] = useState('1');
   const [banos, setBanos] = useState('1');
@@ -459,7 +459,7 @@ export function AnuncioForm() {
 
         <div className="flex justify-end gap-2">
           <Button type="button" variant="outline" onClick={() => navigate(basePath)}>Cancelar</Button>
-          <Button type="submit" disabled={saving || !puedeGuardar}>
+          <Button type="submit" disabled={saving || !puedeGuardar || componiendoFicha}>
             {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
             {isEditing ? 'Guardar cambios' : 'Crear anuncio'}
           </Button>

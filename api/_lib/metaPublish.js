@@ -30,6 +30,16 @@ async function obtenerPermalinkInstagram(mediaId, accessToken) {
   }
 }
 
+async function esperarContenedorListo(containerId, accessToken, maxIntentos = 10) {
+  for (let intento = 0; intento < maxIntentos; intento++) {
+    const info = await graphGet(containerId, { fields: 'status_code' }, accessToken);
+    if (info.status_code === 'FINISHED') return true;
+    if (info.status_code === 'ERROR') return false;
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+  }
+  return false;
+}
+
 export async function publicarFacebookImagenUnica({ accountId, accessToken, imageUrl, caption }) {
   try {
     const result = await graphPost(`${accountId}/photos`, { url: imageUrl, caption }, accessToken);
@@ -60,7 +70,7 @@ export async function publicarInstagramImagenUnica({ accountId, accessToken, ima
     const creado = await graphPost(`${accountId}/media`, { image_url: imageUrl, caption }, accessToken);
     const publicado = await graphPost(`${accountId}/media_publish`, { creation_id: creado.id }, accessToken);
     const permalink = await obtenerPermalinkInstagram(publicado.id, accessToken);
-    return { success: true, externalId: publicado.id, externalUrl: permalink || 'https://www.instagram.com/' };
+    return { success: true, externalId: publicado.id, externalUrl: permalink };
   } catch (error) {
     return { success: false, errorMsg: error.message };
   }
@@ -77,9 +87,13 @@ export async function publicarInstagramCarrusel({ accountId, accessToken, imageU
       itemIds.push(item.id);
     }
     const carrusel = await graphPost(`${accountId}/media`, { media_type: 'CAROUSEL', children: itemIds.join(','), caption }, accessToken);
+    const listo = await esperarContenedorListo(carrusel.id, accessToken);
+    if (!listo) {
+      return { success: false, errorMsg: 'El carrusel de Instagram no terminó de procesarse a tiempo. Intenta de nuevo.' };
+    }
     const publicado = await graphPost(`${accountId}/media_publish`, { creation_id: carrusel.id }, accessToken);
     const permalink = await obtenerPermalinkInstagram(publicado.id, accessToken);
-    return { success: true, externalId: publicado.id, externalUrl: permalink || 'https://www.instagram.com/' };
+    return { success: true, externalId: publicado.id, externalUrl: permalink };
   } catch (error) {
     return { success: false, errorMsg: error.message };
   }

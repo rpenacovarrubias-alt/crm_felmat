@@ -74,8 +74,13 @@ export function AnuncioDetail() {
     if (!anuncio) return;
     setPublicando(true);
     try {
-      await publicarAnuncio(anuncio.id, [canal]);
-      toast.success(`Publicación en ${CANAL_LABELS[canal]} iniciada`);
+      const data = await publicarAnuncio(anuncio.id, [canal]);
+      const resultado = (data.resultados as { canal: string; estado: string }[])[0];
+      if (resultado?.estado === 'error') {
+        toast.error(`No se pudo publicar en ${CANAL_LABELS[canal]}`);
+      } else {
+        toast.success(`Publicado en ${CANAL_LABELS[canal]}`);
+      }
       cargar();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Error al publicar');

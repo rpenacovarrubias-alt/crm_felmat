@@ -152,7 +152,13 @@ export default function ListaAnuncios({
     setIsPublishing(true);
     try {
       const data = await publicarAnuncio(anuncioPublicar.id, canales);
-      toast.success(data.mensaje || 'Publicación iniciada');
+      const resultados = data.resultados as { canal: string; estado: string }[];
+      const conError = resultados.filter((r) => r.estado === 'error');
+      if (conError.length > 0) {
+        toast.error(`No se pudo publicar en: ${conError.map((r) => r.canal).join(', ')}`);
+      } else {
+        toast.success(data.mensaje || 'Publicación procesada');
+      }
       setAnuncioPublicar(null);
       cargarAnuncios();
     } catch (error) {

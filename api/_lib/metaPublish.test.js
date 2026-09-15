@@ -112,6 +112,7 @@ describe('metaPublish', () => {
       .mockResolvedValueOnce(mockFetchOnce({ id: 'item1' }))
       .mockResolvedValueOnce(mockFetchOnce({ id: 'item2' }))
       .mockResolvedValueOnce(mockFetchOnce({ id: 'carousel1' }))
+      .mockResolvedValueOnce(mockFetchOnce({ status_code: 'FINISHED' }))
       .mockResolvedValueOnce(mockFetchOnce({ id: 'media2' }))
       .mockResolvedValueOnce(mockFetchOnce({ permalink: 'https://www.instagram.com/p/XYZ/' }));
     const resultado = await publicarInstagramCarrusel({ accountId: '999', accessToken: 'tok', imageUrls: ['https://x/1.jpg', 'https://x/2.jpg'], caption: 'carrusel ig' });
@@ -120,5 +121,19 @@ describe('metaPublish', () => {
     const carouselBody = new URLSearchParams(carouselCall[1].body);
     expect(carouselBody.get('children')).toBe('item1,item2');
     expect(carouselBody.get('media_type')).toBe('CAROUSEL');
+  });
+
+  it('publicarInstagramCarrusel: si el contenedor termina en ERROR, no llama a media_publish', async () => {
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce(mockFetchOnce({ id: 'item1' }))
+      .mockResolvedValueOnce(mockFetchOnce({ id: 'item2' }))
+      .mockResolvedValueOnce(mockFetchOnce({ id: 'carousel1' }))
+      .mockResolvedValueOnce(mockFetchOnce({ status_code: 'ERROR' }));
+    const resultado = await publicarInstagramCarrusel({ accountId: '999', accessToken: 'tok', imageUrls: ['https://x/1.jpg', 'https://x/2.jpg'], caption: 'carrusel ig' });
+    expect(resultado.success).toBe(false);
+    expect(resultado.errorMsg).toMatch(/no terminó de procesarse/);
+    expect(global.fetch).toHaveBeenCalledTimes(4);
+    const calledUrls = global.fetch.mock.calls.map((c) => c[0]);
+    expect(calledUrls.some((u) => u.includes('media_publish'))).toBe(false);
   });
 });
