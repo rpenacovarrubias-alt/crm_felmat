@@ -3,14 +3,18 @@
 // ============================================
 
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import {
-  obtenerAnuncio, crearAnuncio, actualizarAnuncio, resolverContextoAnuncio,
+  obtenerAnuncio, crearAnuncio, actualizarAnuncio, resolverContextoAnuncio, subirImagenAnuncio,
   type Anuncio, type ImagenAnuncio, type CategoriaAnuncio,
 } from '@/lib/anunciosApi';
 import { TIPOS_PROPIEDAD, MODALIDADES } from './ListaAnuncios';
 import { DiapositivasEditor } from './DiapositivasEditor';
+import { generarImagenAnuncio } from '@/lib/generarImagenAnuncio';
+import { resolverBrandAnuncio } from '@/lib/adBrands';
+import { PlantillaFicha } from './templates/PlantillaFicha';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -37,7 +41,7 @@ function generateSlug(titulo: string): string {
     + '-' + Date.now().toString(36);
 }
 
-function ImagenesUploader({ imagenes, onChange }: { imagenes: ImagenAnuncio[]; onChange: (imgs: ImagenAnuncio[]) => void }) {
+function ImagenesUploader({ imagenes, onChange, componiendoPrincipal }: { imagenes: ImagenAnuncio[]; onChange: (imgs: ImagenAnuncio[]) => void; componiendoPrincipal?: boolean }) {
   const [dragOver, setDragOver] = useState(false);
 
   const handleFiles = (files: FileList | null) => {
@@ -89,6 +93,11 @@ function ImagenesUploader({ imagenes, onChange }: { imagenes: ImagenAnuncio[]; o
           {imagenes.map((img, idx) => (
             <div key={idx} className={cn("relative aspect-square rounded-lg overflow-hidden border-2", img.esPrincipal ? "border-primary" : "border-border")}>
               <img src={img.url} alt="" className="w-full h-full object-cover" />
+              {img.esPrincipal && componiendoPrincipal && (
+                <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                  <Loader2 className="w-6 h-6 animate-spin text-white" />
+                </div>
+              )}
               <div className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                 {!img.esPrincipal && (
                   <Button variant="secondary" size="icon" className="h-8 w-8" onClick={() => setPrincipal(idx)} title="Establecer como principal">
@@ -176,6 +185,36 @@ export function AnuncioForm() {
   const [banos, setBanos] = useState('1');
   const [destacado, setDestacado] = useState(false);
   const [imagenes, setImagenes] = useState<ImagenAnuncio[]>([]);
+
+  const [componiendoFicha, setComponiendoFicha] = useState(false);
+  const renderFichaRef = useRef<HTMLDivElement>(null);
+
+  // Mismo patrón ya en producción para Condominios (DiapositivasEditor.tsx):
+  // se recibe fotoUrl explícito (nunca se lee `imagenes` por dentro) para no
+  // cerrar sobre un array desactualizado cuando se llama en el mismo tick
+  // que un onChange previo (ver el bug real ya corregido ahí).
+  const componerFicha = async (fotoUrl: string) => {
+    if (!fotoUrl) return;
+    setComponiendoFicha(true);
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      if (!renderFichaRef.current) return;
+      const dataUrl = await generarImagenAnuncio(renderFichaRef.current);
+      const { url } = await subirImagenAnuncio(dataUrl);
+      setImagenes((prev) => prev.map((img) => (img.esPrincipal ? { ...img, imagenCompuestaUrl: url } : img)));
+    } catch (error) {
+      toast.error('No se pudo componer la imagen del anuncio. Intenta de nuevo.');
+    } finally {
+      setComponiendoFicha(false);
+    }
+  };
+
+  const handleFichaBlur = () => {
+    const principal = imagenes.find((i) => i.esPrincipal);
+    if (principal?.url) componerFicha(principal.url);
+  };
+
+  const principalFicha = imagenes.find((i) => i.esPrincipal);
 
   useEffect(() => {
     if (!id) return;
@@ -335,11 +374,11 @@ export function AnuncioForm() {
                 </div>
                 <div className="space-y-1.5">
                   <Label>Colonia *</Label>
-                  <Input value={colonia} onChange={(e) => setColonia(e.target.value)} required />
+                  <Input value={colonia} onChange={(e) => setColonia(e.target.value)} onBlur={handleFichaBlur} required />
                 </div>
                 <div className="space-y-1.5">
                   <Label>Ciudad *</Label>
-                  <Input value={ciudad} onChange={(e) => setCiudad(e.target.value)} required />
+                  <Input value={ciudad} onChange={(e) => setCiudad(e.target.value)} onBlur={handleFichaBlur} required />
                 </div>
                 <div className="space-y-1.5">
                   <Label>Recámaras</Label>
@@ -375,11 +414,11 @@ export function AnuncioForm() {
                 </div>
                 <div className="space-y-1.5">
                   <Label>Precio *</Label>
-                  <Input type="number" min={0} value={precio} onChange={(e) => setPrecio(e.target.value)} required />
+                  <Input type="number" min={0} value={precio} onChange={(e) => setPrecio(e.target.value)} onBlur={handleFichaBlur} required />
                 </div>
                 <div className="space-y-1.5">
                   <Label>Periodo</Label>
-                  <Select value={periodo} onValueChange={setPeriodo}>
+                  <Select value={periodo} onValueChange={(v) => { setPeriodo(v); handleFichaBlur(); }}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="/mes">/mes</SelectItem>
@@ -394,7 +433,15 @@ export function AnuncioForm() {
             <Card>
               <CardHeader><CardTitle className="text-base">Imágenes</CardTitle></CardHeader>
               <CardContent>
-                <ImagenesUploader imagenes={imagenes} onChange={setImagenes} />
+                <ImagenesUploader
+                  imagenes={imagenes}
+                  onChange={(imgs) => {
+                    setImagenes(imgs);
+                    const principal = imgs.find((i) => i.esPrincipal);
+                    if (principal?.url) componerFicha(principal.url);
+                  }}
+                  componiendoPrincipal={componiendoFicha}
+                />
               </CardContent>
             </Card>
           </>
@@ -408,6 +455,27 @@ export function AnuncioForm() {
           </Button>
         </div>
       </form>
+
+      {componiendoFicha && principalFicha?.url &&
+        createPortal(
+          <div style={{ position: 'fixed', top: -9999, left: -9999 }}>
+            <div ref={renderFichaRef}>
+              <PlantillaFicha
+                fotoUrl={principalFicha.url}
+                brand={resolverBrandAnuncio(modo)}
+                badge={modo === 'airbnb' ? 'AIRBNB' : periodo === 'total' ? 'VENTA' : 'RENTA'}
+                precio={Number(precio) || 0}
+                moneda={moneda}
+                periodo={periodo}
+                colonia={colonia}
+                ciudad={ciudad}
+                recamaras={Number(recamaras) || 0}
+                banos={Number(banos) || 0}
+              />
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   );
 }
